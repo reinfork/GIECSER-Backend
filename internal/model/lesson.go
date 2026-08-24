@@ -18,3 +18,9 @@ type CreateLessonInput struct {
 	OrderIndex int    `json:"order_index" binding:"required,gte=1"`
 	TargetText string `json:"target_text" binding:"required"`
 }
+
+type UpdateLessonInput struct {
+	Title      *string `json:"title" binding:"omitempty,min=1"`
+	OrderIndex *int    `json:"order_index" binding:"omitempty,gte=1"`
+	TargetText *string `json:"target_text" binding:"omitempty,min=1"`
+}

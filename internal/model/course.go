@@ -15,3 +15,8 @@ type CreateCourseInput struct {
 	Title       string `json:"title" binding:"required,min=3"`
 	Description string `json:"description" binding:"required"`
 }
+
+type UpdateCourseInput struct {
+	Title       *string `json:"title" binding:"omitempty,min=3"`
+	Description *string `json:"description" binding:"omitempty,min=1"`
+}
