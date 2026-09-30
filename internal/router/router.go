@@ -48,14 +48,8 @@ func registerRoutes(r *gin.Engine, db *gorm.DB) {
 	lessonHandler := handler.NewLessonHandler(lessonService)
 	authHandler := handler.NewAuthHandler(authService)
 
-	// Global / non-versioned routes (like Express app.get("/health"))
 	registerHealthRoutes(r, healthHandler)
-
-	// Versioned API — mirrors Express app.use("/api/v1", apiRouter)
-	api := r.Group("/api/v1")
-	{
-		registerCourseRoutes(api, courseHandler)
-		registerLessonRoutes(api, lessonHandler)
-		registerAuthRoutes(api, authHandler)
-	}
+	registerCourseRoutes(r, courseHandler)
+	registerLessonRoutes(r, lessonHandler)
+	registerAuthRoutes(r, authHandler)
 }

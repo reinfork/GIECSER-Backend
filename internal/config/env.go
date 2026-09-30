@@ -9,7 +9,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config holds all environment configuration (like Express's process.env).
 type Config struct {
 	PGHost     string
 	PGPort     string
@@ -21,7 +20,6 @@ type Config struct {
 	ServerPort string
 }
 
-// DSN returns postgres DSN with timeout to avoid hanging on unreachable Aiven.
 func (c *Config) DSN() string {
 	return fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=require connect_timeout=5",
@@ -29,10 +27,7 @@ func (c *Config) DSN() string {
 	)
 }
 
-// Load finds and loads .env automatically, then returns Config.
-// Search order: cwd -> executable dir -> walk up 3 levels (covers `go run ./cmd/api` and `tmp/main`).
 func Load() *Config {
-	// Try to load .env from常见 locations; ignore errors — env may already be set (Docker, system)
 	loaded := false
 	for _, p := range findEnvPaths() {
 		if err := godotenv.Load(p); err == nil {
@@ -41,7 +36,6 @@ func Load() *Config {
 		}
 	}
 	if !loaded {
-		// Also try default Load() which looks in cwd
 		_ = godotenv.Load()
 		if os.Getenv("PGHOST") != "" {
 			loaded = true
@@ -85,7 +79,6 @@ func findEnvPaths() []string {
 		}
 	}
 
-	// 2. Executable directory and parents (for /tmp/main or /tmp/asri-latest)
 	if exe, err := os.Executable(); err == nil {
 		dir := filepath.Dir(exe)
 		for i := 0; i < 4; i++ {
@@ -94,11 +87,9 @@ func findEnvPaths() []string {
 			paths = append(paths, filepath.Join(dir, "backend", ".env"))
 			dir = filepath.Dir(dir)
 		}
-		// Hard fallback for this project's known location
 		paths = append(paths, "/home/dwipapap/Projek/asri/backend/.env")
 	}
 
-	// Deduplicate while preserving order
 	seen := make(map[string]bool)
 	uniq := make([]string, 0, len(paths))
 	for _, p := range paths {
