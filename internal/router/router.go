@@ -11,12 +11,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// New returns a configured gin.Engine with all routes registered.
-// Factory now injects *gorm.DB (most common Go pattern for CRUD).
+
 func New(db *gorm.DB) *gin.Engine {
 	r := gin.Default()
 
-	// CORS for Vue Vite SPA (like Express cors middleware) — allow all in dev
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},

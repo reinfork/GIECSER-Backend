@@ -13,7 +13,6 @@ import (
 func main() {
 	cfg := config.Load()
 
-	// Set Gin mode from env (like Express NODE_ENV)
 	gin.SetMode(cfg.GinMode)
 
 	if cfg.PGHost == "" || cfg.PGPort == "" || cfg.PGUser == "" || cfg.PGDatabase == "" {

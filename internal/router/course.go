@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func registerCourseRoutes(rg *gin.RouterGroup, h *handler.CourseHandler) {
+func registerCourseRoutes(rg *gin.Engine, h *handler.CourseHandler) {
 	courses := rg.Group("/courses")
 	{
 		courses.GET("", h.List)

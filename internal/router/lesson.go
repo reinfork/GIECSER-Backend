@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func registerLessonRoutes(rg *gin.RouterGroup, h *handler.LessonHandler) {
+func registerLessonRoutes(rg *gin.Engine, h *handler.LessonHandler) {
 	lessons := rg.Group("/lessons")
 	{
 		lessons.GET("/:id", h.GetByID)
@@ -17,7 +17,6 @@ func registerLessonRoutes(rg *gin.RouterGroup, h *handler.LessonHandler) {
 		lessons.POST("/:id/practice", middleware.AuthMiddleware(), h.Practice)
 	}
 
-	// Nested: /api/v1/courses/:id/lessons — mirrors typical REST for Asri
 	courses := rg.Group("/courses")
 	{
 		courses.GET("/:id/lessons", h.ListByCourse)
