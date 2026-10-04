@@ -33,16 +33,16 @@ func (r *Redis) Ping(ctx context.Context) error {
 	return r.c.Ping(ctx).Err()
 }
 
-func (r *Redis) SetPIN(ctx context.Context, code, chapterID string, ttl time.Duration) error {
-	return r.c.Set(ctx, "pin:"+code, chapterID, ttl).Err()
+func (r *Redis) SetPIN(ctx context.Context, code string, ttl time.Duration) error {
+	return r.c.Set(ctx, "pin:"+code, "1", ttl).Err()
 }
 
-func (r *Redis) GetPIN(ctx context.Context, code string) (string, error) {
-	chapterID, err := r.c.Get(ctx, "pin:"+code).Result()
+func (r *Redis) GetPIN(ctx context.Context, code string) (bool, error) {
+	_, err := r.c.Get(ctx, "pin:"+code).Result()
 	if errors.Is(err, redis.Nil) {
-		return "", ErrCacheMiss
+		return false, ErrCacheMiss
 	}
-	return chapterID, err
+	return err == nil, err
 }
 
 // Allow implements a fixed window: limit hits per window per key.
