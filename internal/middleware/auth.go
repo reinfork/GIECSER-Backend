@@ -58,9 +58,6 @@ func AuthMiddleware() gin.HandlerFunc {
 		if sub, ok := claims["sub"].(string); ok {
 			c.Set("userID", sub)
 		}
-		if chapterID, ok := claims["chapter_id"].(string); ok {
-			c.Set("chapterID", chapterID)
-		}
 		c.Set("claims", claims)
 
 		c.Next()
@@ -76,13 +73,4 @@ func RequireKind(kind string) gin.HandlerFunc {
 		}
 		c.Next()
 	}
-}
-
-func SessionChapter(c *gin.Context) string {
-	if k, _ := c.Get("tokenKind"); k != KindSession {
-		return ""
-	}
-	chapterID, _ := c.Get("chapterID")
-	id, _ := chapterID.(string)
-	return id
 }
