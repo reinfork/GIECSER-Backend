@@ -14,36 +14,17 @@ func NewCourseRepository(db *gorm.DB) *CourseRepository {
 	return &CourseRepository{db: db}
 }
 
-func (r *CourseRepository) FindAll() ([]model.Course, error) {
+func (r *CourseRepository) FindByChapter(chapterID string) ([]model.Course, error) {
 	var courses []model.Course
-	if err := r.db.Preload("Lessons", func(db *gorm.DB) *gorm.DB {
-		return db.Order("order_index ASC")
-	}).Find(&courses).Error; err != nil {
+	if err := r.db.Where("chapter_id = ?", chapterID).Order("order_index ASC").Find(&courses).Error; err != nil {
 		return nil, err
 	}
 	return courses, nil
 }
 
-func (r *CourseRepository) FindAllPaginated(limit, offset int) ([]model.Course, int64, error) {
-	var courses []model.Course
-	var total int64
-	if err := r.db.Model(&model.Course{}).Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-	q := r.db.Preload("Lessons", func(db *gorm.DB) *gorm.DB {
-		return db.Order("order_index ASC")
-	}).Order("id ASC").Limit(limit).Offset(offset)
-	if err := q.Find(&courses).Error; err != nil {
-		return nil, 0, err
-	}
-	return courses, total, nil
-}
-
-func (r *CourseRepository) FindByID(id uint) (*model.Course, error) {
+func (r *CourseRepository) FindByID(id string) (*model.Course, error) {
 	var course model.Course
-	if err := r.db.Preload("Lessons", func(db *gorm.DB) *gorm.DB {
-		return db.Order("order_index ASC")
-	}).First(&course, id).Error; err != nil {
+	if err := r.db.First(&course, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
 	return &course, nil
@@ -57,6 +38,6 @@ func (r *CourseRepository) Update(course *model.Course) error {
 	return r.db.Save(course).Error
 }
 
-func (r *CourseRepository) Delete(id uint) error {
-	return r.db.Delete(&model.Course{}, id).Error
+func (r *CourseRepository) Delete(id string) error {
+	return r.db.Delete(&model.Course{}, "id = ?", id).Error
 }
