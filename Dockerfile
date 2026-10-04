@@ -21,6 +21,6 @@ COPY --from=builder /app/main .
 
 USER appuser
 
-EXPOSE 8080
+EXPOSE 5000
 
 ENTRYPOINT ["./main"]
