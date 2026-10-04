@@ -2,19 +2,20 @@ package router
 
 import (
 	"asri-backend/internal/handler"
-	"asri-backend/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
-func registerCourseRoutes(rg *gin.Engine, h *handler.CourseHandler) {
-	courses := rg.Group("/courses")
+func registerCourseRoutes(r *gin.Engine, h *handler.CourseHandler, auth, teacher gin.HandlerFunc) {
+	chapters := r.Group("/chapters")
 	{
-		courses.GET("", h.List)
-		courses.GET("/:id", h.GetByID)
-		// Protected — requires JWT, admin only for writes (like Express auth middleware)
-		courses.POST("", middleware.AuthMiddleware(), middleware.RequireRole("admin"), h.Create)
-		courses.PUT("/:id", middleware.AuthMiddleware(), middleware.RequireRole("admin"), h.Update)
-		courses.DELETE("/:id", middleware.AuthMiddleware(), middleware.RequireRole("admin"), h.Delete)
+		chapters.GET("/:id/courses", auth, h.ListByChapter)
+	}
+	courses := r.Group("/courses")
+	{
+		courses.GET("/:id", auth, h.GetByID)
+		courses.POST("", auth, teacher, h.Create)
+		courses.PUT("/:id", auth, teacher, h.Update)
+		courses.DELETE("/:id", auth, teacher, h.Delete)
 	}
 }

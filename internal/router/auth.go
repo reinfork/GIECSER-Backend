@@ -1,26 +1,13 @@
 package router
 
 import (
+	"time"
+
 	"asri-backend/internal/handler"
-	"asri-backend/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
-func registerAuthRoutes(rg *gin.Engine, h *handler.AuthHandler) {
-	auth := rg.Group("/auth")
-	{
-		auth.POST("/register", h.Register)
-		auth.POST("/login", h.Login)
-		// Current user profile — requires JWT
-		auth.GET("/me", middleware.AuthMiddleware(), h.Me)
-	}
-
-	users := rg.Group("/users")
-	{
-		// Public read for now, admin-only delete
-		users.GET("", h.ListUsers)
-		users.GET("/:id", h.GetUserByID)
-		users.DELETE("/:id", middleware.AuthMiddleware(), middleware.RequireRole("admin"), h.DeleteUser)
-	}
+func registerAuthRoutes(r *gin.Engine, h *handler.AuthHandler, rl func(int, time.Duration) gin.HandlerFunc) {
+	r.POST("/teachers/login", rl(10, time.Minute), h.TeacherLogin)
 }
