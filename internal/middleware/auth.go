@@ -9,6 +9,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+
+const (
+	KindTeacher = "teacher"
+	KindSession = "session"
+)
+
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
@@ -21,13 +27,12 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "authorization header must be Bearer token"})
 			return
 		}
-		tokenString := parts[1]
 		secret := os.Getenv("JWT_SECRET")
 		if secret == "" {
 			secret = "dev-secret-change-me"
 		}
 
-		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+		token, err := jwt.Parse(parts[1], func(t *jwt.Token) (interface{}, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
@@ -44,15 +49,17 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Store claims for downstream handlers
-		if sub, ok := claims["sub"].(float64); ok {
-			c.Set("userID", uint(sub))
+		kind, _ := claims["kind"].(string)
+		if kind != KindTeacher && kind != KindSession {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unknown token kind"})
+			return
 		}
-		if email, ok := claims["email"].(string); ok {
-			c.Set("userEmail", email)
+		c.Set("tokenKind", kind)
+		if sub, ok := claims["sub"].(string); ok {
+			c.Set("userID", sub)
 		}
-		if role, ok := claims["role"].(string); ok {
-			c.Set("userRole", role)
+		if chapterID, ok := claims["chapter_id"].(string); ok {
+			c.Set("chapterID", chapterID)
 		}
 		c.Set("claims", claims)
 
@@ -60,22 +67,22 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func RequireRole(roles ...string) gin.HandlerFunc {
-	allowed := make(map[string]bool, len(roles))
-	for _, r := range roles {
-		allowed[r] = true
-	}
+
+func RequireKind(kind string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		role, exists := c.Get("userRole")
-		if !exists {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "role not found in token"})
-			return
-		}
-		roleStr, ok := role.(string)
-		if !ok || !allowed[roleStr] {
+		if k, _ := c.Get("tokenKind"); k != kind {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
 			return
 		}
 		c.Next()
 	}
+}
+
+func SessionChapter(c *gin.Context) string {
+	if k, _ := c.Get("tokenKind"); k != KindSession {
+		return ""
+	}
+	chapterID, _ := c.Get("chapterID")
+	id, _ := chapterID.(string)
+	return id
 }
