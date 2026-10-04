@@ -4,35 +4,37 @@ import (
 	"errors"
 
 	"asri-backend/internal/model"
-	"asri-backend/internal/repository"
 
 	"gorm.io/gorm"
 )
 
+type CourseRepo interface {
+	FindByChapter(chapterID string) ([]model.Course, error)
+	FindByID(id string) (*model.Course, error)
+	Create(c *model.Course) error
+	Update(c *model.Course) error
+	Delete(id string) error
+}
+
+// ChapterStore is what content services need for parent lookups — fakes welcome.
+type ChapterStore interface {
+	FindByID(id string) (*model.Chapter, error)
+}
+
 type CourseService struct {
-	repo *repository.CourseRepository
+	repo     CourseRepo
+	chapters ChapterStore
 }
 
-func NewCourseService(repo *repository.CourseRepository) *CourseService {
-	return &CourseService{repo: repo}
+func NewCourseService(repo CourseRepo, chapters ChapterStore) *CourseService {
+	return &CourseService{repo: repo, chapters: chapters}
 }
 
-func (s *CourseService) List() ([]model.Course, error) {
-	return s.repo.FindAll()
+func (s *CourseService) ListByChapter(chapterID string) ([]model.Course, error) {
+	return s.repo.FindByChapter(chapterID)
 }
 
-func (s *CourseService) ListPaginated(page, limit int) ([]model.Course, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 10
-	}
-	offset := (page - 1) * limit
-	return s.repo.FindAllPaginated(limit, offset)
-}
-
-func (s *CourseService) GetByID(id uint) (*model.Course, error) {
+func (s *CourseService) GetByID(id string) (*model.Course, error) {
 	course, err := s.repo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -44,17 +46,20 @@ func (s *CourseService) GetByID(id uint) (*model.Course, error) {
 }
 
 func (s *CourseService) Create(input model.CreateCourseInput) (*model.Course, error) {
-	course := &model.Course{
-		Title:       input.Title,
-		Description: input.Description,
+	if _, err := s.chapters.FindByID(input.ChapterID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
 	}
+	course := &model.Course{ChapterID: input.ChapterID, Title: input.Title, Description: input.Description, OrderIndex: input.OrderIndex}
 	if err := s.repo.Create(course); err != nil {
 		return nil, err
 	}
 	return course, nil
 }
 
-func (s *CourseService) Update(id uint, input model.UpdateCourseInput) (*model.Course, error) {
+func (s *CourseService) Update(id string, input model.UpdateCourseInput) (*model.Course, error) {
 	course, err := s.GetByID(id)
 	if err != nil {
 		return nil, err
@@ -65,13 +70,16 @@ func (s *CourseService) Update(id uint, input model.UpdateCourseInput) (*model.C
 	if input.Description != nil {
 		course.Description = *input.Description
 	}
+	if input.OrderIndex != nil {
+		course.OrderIndex = *input.OrderIndex
+	}
 	if err := s.repo.Update(course); err != nil {
 		return nil, err
 	}
 	return course, nil
 }
 
-func (s *CourseService) Delete(id uint) error {
+func (s *CourseService) Delete(id string) error {
 	if _, err := s.GetByID(id); err != nil {
 		return err
 	}

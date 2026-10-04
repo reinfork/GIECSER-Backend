@@ -6,46 +6,36 @@ import (
 	"time"
 
 	"asri-backend/internal/model"
-	"asri-backend/internal/repository"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
+// UserStore is what teacher auth needs — fakes welcome, no DB required in tests.
+type UserStore interface {
+	FindByEmail(email string) (*model.User, error)
+	Create(user *model.User) error
+}
+
 type AuthService struct {
-	userRepo *repository.UserRepository
+	users UserStore
 }
 
-func NewAuthService(userRepo *repository.UserRepository) *AuthService {
-	return &AuthService{userRepo: userRepo}
+func NewAuthService(users UserStore) *AuthService {
+	return &AuthService{users: users}
 }
 
-func (s *AuthService) Register(input model.RegisterInput) (*model.User, error) {
-	if _, err := s.userRepo.FindByEmail(input.Email); err == nil {
-		return nil, ErrConflict
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
+func jwtSecret() string {
+	if s := os.Getenv("JWT_SECRET"); s != "" {
+		return s
 	}
-
-	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-	user := &model.User{
-		Name:         input.Name,
-		Email:        input.Email,
-		PasswordHash: string(hash),
-		Role:         input.Role,
-	}
-	if err := s.userRepo.Create(user); err != nil {
-		return nil, err
-	}
-	return user, nil
+	return "dev-secret-change-me"
 }
 
-func (s *AuthService) Login(input model.LoginInput) (string, *model.User, error) {
-	user, err := s.userRepo.FindByEmail(input.Email)
+// TeacherLogin authenticates a teacher, issuing a kind=teacher JWT (24h).
+func (s *AuthService) TeacherLogin(input model.TeacherLoginInput) (string, *model.User, error) {
+	user, err := s.users.FindByEmail(input.Email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", nil, ErrUnauthorized
@@ -55,58 +45,54 @@ func (s *AuthService) Login(input model.LoginInput) (string, *model.User, error)
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
 		return "", nil, ErrUnauthorized
 	}
-	token, err := s.generateToken(user)
+	token, err := signToken(jwt.MapClaims{
+		"sub":   user.ID,
+		"email": user.Email,
+		"kind":  "teacher",
+		"exp":   time.Now().Add(24 * time.Hour).Unix(),
+		"iat":   time.Now().Unix(),
+	})
 	if err != nil {
 		return "", nil, err
 	}
 	return token, user, nil
 }
 
-func (s *AuthService) ListUsers() ([]model.User, error) {
-	return s.userRepo.FindAll()
+// SessionToken mints a short-lived kind=session JWT. Unscoped by design:
+// one classroom code opens the whole book (no per-chapter gating).
+func SessionToken(ttlHours int) (string, error) {
+	if ttlHours < 1 {
+		ttlHours = 12
+	}
+	return signToken(jwt.MapClaims{
+		"kind": "session",
+		"exp":  time.Now().Add(time.Duration(ttlHours) * time.Hour).Unix(),
+		"iat":  time.Now().Unix(),
+	})
 }
 
-func (s *AuthService) ListUsersPaginated(page, limit int) ([]model.User, int64, error) {
-	if page < 1 {
-		page = 1
+// SeedTeacher creates the teacher account on first boot when env provides credentials.
+func (s *AuthService) SeedTeacher(email, password string) (*model.User, error) {
+	if email == "" || password == "" {
+		return nil, nil // nothing configured — skip silently
 	}
-	if limit < 1 || limit > 100 {
-		limit = 10
+	if u, err := s.users.FindByEmail(email); err == nil {
+		return u, nil // already seeded
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
 	}
-	offset := (page - 1) * limit
-	return s.userRepo.FindAllPaginated(limit, offset)
-}
-
-func (s *AuthService) GetUserByID(id uint) (*model.User, error) {
-	user, err := s.userRepo.FindByID(id)
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrNotFound
-		}
+		return nil, err
+	}
+	user := &model.User{Email: email, PasswordHash: string(hash)}
+	if err := s.users.Create(user); err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
-func (s *AuthService) DeleteUser(id uint) error {
-	if _, err := s.GetUserByID(id); err != nil {
-		return err
-	}
-	return s.userRepo.Delete(id)
-}
-
-func (s *AuthService) generateToken(user *model.User) (string, error) {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "dev-secret-change-me"
-	}
-	claims := jwt.MapClaims{
-		"sub":  user.ID,
-		"email": user.Email,
-		"role": user.Role,
-		"exp":  time.Now().Add(72 * time.Hour).Unix(),
-		"iat":  time.Now().Unix(),
-	}
+func signToken(claims jwt.MapClaims) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secret))
+	return token.SignedString([]byte(jwtSecret()))
 }
