@@ -55,7 +55,7 @@ func registerRoutes(r *gin.Engine, db *gorm.DB, cfg Config) {
 
 	// Services
 	authService := service.NewAuthService(userRepo)
-	accessService := service.NewAccessService(codeRepo, chapterRepo, redisStore, cfg.SessionTTLHours)
+	accessService := service.NewAccessService(codeRepo, redisStore, cfg.SessionTTLHours)
 	chapterService := service.NewChapterService(chapterRepo)
 	courseService := service.NewCourseService(courseRepo, chapterRepo)
 	moduleService := service.NewModuleService(moduleRepo, courseRepo)
