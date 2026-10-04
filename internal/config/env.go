@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -10,21 +9,19 @@ import (
 )
 
 type Config struct {
-	PGHost     string
-	PGPort     string
-	PGUser     string
-	PGPassword string
-	PGDatabase string
-	JWTSecret  string
-	GinMode    string
-	ServerPort string
+	DatabaseURL     string
+	RedisURL        string
+	JWTSecret       string
+	GinMode         string
+	ServerPort      string
+	GroqAPIKey      string
+	SessionTTLHours string
+	TeacherEmail    string
+	TeacherPassword string
 }
 
 func (c *Config) DSN() string {
-	return fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=require connect_timeout=5",
-		c.PGHost, c.PGPort, c.PGUser, c.PGPassword, c.PGDatabase,
-	)
+	return c.DatabaseURL
 }
 
 func Load() *Config {
@@ -37,23 +34,24 @@ func Load() *Config {
 	}
 	if !loaded {
 		_ = godotenv.Load()
-		if os.Getenv("PGHOST") != "" {
+		if os.Getenv("DATABASE_URL") != "" {
 			loaded = true
 		}
 	}
-	if !loaded && os.Getenv("PGHOST") == "" {
+	if !loaded && os.Getenv("DATABASE_URL") == "" {
 		log.Println("no .env file found, relying on environment variables")
 	}
 
 	cfg := &Config{
-		PGHost:     os.Getenv("PGHOST"),
-		PGPort:     os.Getenv("PGPORT"),
-		PGUser:     os.Getenv("PGUSER"),
-		PGPassword: os.Getenv("PGPASSWORD"),
-		PGDatabase: os.Getenv("PGDATABASE"),
-		JWTSecret:  os.Getenv("JWT_SECRET"),
-		GinMode:    os.Getenv("GIN_MODE"),
-		ServerPort: os.Getenv("PORT"),
+		DatabaseURL:     os.Getenv("DATABASE_URL"),
+		RedisURL:        os.Getenv("REDIS_URL"),
+		JWTSecret:       os.Getenv("JWT_SECRET"),
+		GinMode:         os.Getenv("GIN_MODE"),
+		ServerPort:      os.Getenv("PORT"),
+		GroqAPIKey:      os.Getenv("GROQ_API_KEY"),
+		SessionTTLHours: os.Getenv("SESSION_TTL_HOURS"),
+		TeacherEmail:    os.Getenv("TEACHER_EMAIL"),
+		TeacherPassword: os.Getenv("TEACHER_PASSWORD"),
 	}
 	if cfg.JWTSecret == "" {
 		cfg.JWTSecret = "dev-secret-change-me"
@@ -62,7 +60,13 @@ func Load() *Config {
 		cfg.GinMode = "debug"
 	}
 	if cfg.ServerPort == "" {
-		cfg.ServerPort = "8080"
+		cfg.ServerPort = "5000"
+	}
+	if cfg.RedisURL == "" {
+		cfg.RedisURL = "redis://localhost:6379/0"
+	}
+	if cfg.SessionTTLHours == "" {
+		cfg.SessionTTLHours = "12"
 	}
 	return cfg
 }

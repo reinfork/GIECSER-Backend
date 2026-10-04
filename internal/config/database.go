@@ -13,7 +13,15 @@ func InitDB(dsn string) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	if err := db.AutoMigrate(&model.User{}, &model.Course{}, &model.Lesson{}); err != nil {
+	if err := db.AutoMigrate(
+		&model.User{},
+		&model.AccessCode{},
+		&model.Chapter{},
+		&model.Course{},
+		&model.Module{},
+		&model.Task{},
+		&model.AudioSubmission{},
+	); err != nil {
 		return nil, err
 	}
 
