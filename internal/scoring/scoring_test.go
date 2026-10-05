@@ -86,3 +86,30 @@ func TestSyllables(t *testing.T) {
 		}
 	}
 }
+
+func TestAlign(t *testing.T) {
+	cases := []struct {
+		name     string
+		ref, hyp string
+		want     []string
+	}{
+		{"perfect", "root sap wound", "root sap wound", nil},
+		{"substitution", "jong layo is a game", "jong layo is uh games", []string{"a", "game"}},
+		{"deletion", "i eat rice", "i eat", []string{"rice"}},
+		{"insertion ignored", "i eat", "i eat rice", nil},
+		{"deduped in order", "a a b", "x x b", []string{"a"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Align(tc.ref, tc.hyp)
+			if len(got) != len(tc.want) {
+				t.Fatalf("Align = %v, want %v", got, tc.want)
+			}
+			for i := range got {
+				if got[i] != tc.want[i] {
+					t.Fatalf("Align = %v, want %v", got, tc.want)
+				}
+			}
+		})
+	}
+}

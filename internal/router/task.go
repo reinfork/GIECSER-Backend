@@ -17,6 +17,7 @@ func registerTaskRoutes(r *gin.Engine, h *handler.TaskHandler, auth, teacher gin
 	{
 		tasks.GET("/:id", auth, h.GetByID)
 		tasks.POST("/:id/submit-audio", auth, rl(20, time.Minute), h.SubmitAudio)
+		tasks.POST("/:id/submit-text", auth, rl(20, time.Minute), h.SubmitText)
 		tasks.POST("", auth, teacher, h.Create)
 		tasks.PUT("/:id", auth, teacher, h.Update)
 		tasks.DELETE("/:id", auth, teacher, h.Delete)

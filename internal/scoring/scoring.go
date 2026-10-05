@@ -88,6 +88,55 @@ func min3(a, b, c int) int {
 	return min(a, min(b, c))
 }
 
+// Align returns reference words hit by substitution or deletion, deduped in
+// order. Same normalization and backtrack priority as WER, so chips agree
+// with Accuracy by construction.
+// ponytail: O(n*m) DP per submit — clips are short; Hirschberg when they aren't.
+func Align(reference, transcript string) []string {
+	ref, hyp := Words(reference), Words(transcript)
+	n, m := len(ref), len(hyp)
+	dp := make([][]int, n+1)
+	for a := range dp {
+		dp[a] = make([]int, m+1)
+		dp[a][0] = a
+	}
+	for b := 0; b <= m; b++ {
+		dp[0][b] = b
+	}
+	for a := 1; a <= n; a++ {
+		for b := 1; b <= m; b++ {
+			cost := 0
+			if ref[a-1] != hyp[b-1] {
+				cost = 1
+			}
+			dp[a][b] = min3(dp[a-1][b]+1, dp[a][b-1]+1, dp[a-1][b-1]+cost)
+		}
+	}
+	var bad []string
+	seen := map[string]bool{}
+	for a, b := n, m; a > 0 || b > 0; {
+		switch {
+		case a > 0 && b > 0 && ref[a-1] == hyp[b-1]:
+			a, b = a-1, b-1
+		case a > 0 && b > 0 && dp[a][b] == dp[a-1][b-1]+1:
+			if !seen[ref[a-1]] {
+				seen[ref[a-1]] = true
+				bad = append([]string{ref[a-1]}, bad...)
+			}
+			a, b = a-1, b-1
+		case b > 0 && dp[a][b] == dp[a][b-1]+1:
+			b--
+		default:
+			if !seen[ref[a-1]] {
+				seen[ref[a-1]] = true
+				bad = append([]string{ref[a-1]}, bad...)
+			}
+			a--
+		}
+	}
+	return bad
+}
+
 // Accuracy derives PRD §3.1: max(0, 100*(1-WER)).
 func Accuracy(wer float64) float64 {
 	return math.Max(0, 100*(1-wer))

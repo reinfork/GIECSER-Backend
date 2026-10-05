@@ -9,4 +9,5 @@ var (
 	ErrCourseNotFound = errors.New("course not found")
 	ErrExpired        = errors.New("expired")
 	ErrUnsupported    = errors.New("unsupported task type")
+	ErrValidation     = errors.New("invalid feedback payload")
 )

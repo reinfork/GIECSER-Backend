@@ -61,7 +61,7 @@ func registerRoutes(r *gin.Engine, db *gorm.DB, cfg Config) {
 	moduleService := service.NewModuleService(moduleRepo, courseRepo)
 	taskService := service.NewTaskService(taskRepo, moduleRepo, courseRepo, chapterRepo)
 	submissionService := service.NewSubmissionService(
-		taskRepo, moduleRepo, submissionRepo,
+		taskRepo, moduleRepo, courseRepo, chapterRepo, submissionRepo,
 		groq.NewWhisperClient(cfg.GroqAPIKey), groq.NewFeedbackClient(cfg.GroqAPIKey),
 	)
 
@@ -83,7 +83,7 @@ func registerRoutes(r *gin.Engine, db *gorm.DB, cfg Config) {
 	registerHealthRoutes(r, healthHandler)
 	registerAuthRoutes(r, authHandler, rl)
 	registerAccessRoutes(r, accessHandler, auth, teacher, rl)
-	registerChapterRoutes(r, chapterHandler, auth, teacher)
+	registerChapterRoutes(r, chapterHandler, taskHandler, auth, teacher, rl)
 	registerCourseRoutes(r, courseHandler, auth, teacher)
 	registerModuleRoutes(r, moduleHandler, auth, teacher)
 	registerTaskRoutes(r, taskHandler, auth, teacher, rl)

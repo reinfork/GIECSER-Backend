@@ -109,6 +109,59 @@ func (h *TaskHandler) SubmitAudio(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// SubmitText scores a client-transcribed utterance (bytes over HTTPS, no audio
+// upload, no Groq). No-SR browsers keep using SubmitAudio as fallback.
+func (h *TaskHandler) SubmitText(c *gin.Context) {
+	var input struct {
+		Transcribed string  `json:"transcribed"`
+		DurationSec float64 `json:"duration_sec"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "transcribed text required"})
+		return
+	}
+	result, err := h.submissions.SubmitText(c.Request.Context(), c.Param("id"), input.Transcribed, input.DurationSec)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "task not found"})
+		case errors.Is(err, service.ErrValidation):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case errors.Is(err, service.ErrUnsupported):
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "task does not accept audio"})
+		default:
+			c.JSON(http.StatusBadGateway, gin.H{"error": "assessment failed, try again"})
+		}
+		return
+	}
+	c.JSON(http.StatusOK, result)
+}
+
+// ChapterFeedback rolls client-held attempts into one chapter verdict.
+// Stateless: validates task→chapter linkage, stores nothing.
+func (h *TaskHandler) ChapterFeedback(c *gin.Context) {
+	var input struct {
+		Attempts []service.ChapterAttempt `json:"attempts"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "attempts required"})
+		return
+	}
+	verdict, err := h.submissions.ChapterFeedback(c.Request.Context(), c.Param("id"), input.Attempts)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "chapter or task not found"})
+		case errors.Is(err, service.ErrValidation):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusBadGateway, gin.H{"error": "feedback failed, try again"})
+		}
+		return
+	}
+	c.JSON(http.StatusOK, verdict)
+}
+
 func (h *TaskHandler) Create(c *gin.Context) {
 	var input model.CreateTaskInput
 	if err := c.ShouldBindJSON(&input); err != nil {
