@@ -10,6 +10,7 @@ import (
 	"asri-backend/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // 5MB / short clips only: sentences, not lectures (pedagogy + queue math agree).
@@ -55,6 +56,33 @@ func (h *TaskHandler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, task.Public())
 }
 
+// sessionIdentity reads the name+code the validate step sealed into the JWT.
+// Empty when the caller is a teacher token (teacher submits carry no student).
+func sessionIdentity(c *gin.Context) (name, code string) {
+	if v, ok := c.Get("claims"); ok {
+		if m, ok := v.(jwt.MapClaims); ok {
+			name, _ = m["name"].(string)
+			code, _ = m["code"].(string)
+		}
+	}
+	return name, code
+}
+
+// ScoresByCode serves the teacher Nilai view (latest per student/task).
+func (h *TaskHandler) ScoresByCode(c *gin.Context) {
+	code := strings.ToUpper(strings.TrimSpace(c.Query("code")))
+	if len(code) != 6 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "code query required (6 chars)"})
+		return
+	}
+	rows, err := h.submissions.LatestByCode(code)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": rows})
+}
+
 // SubmitAudio runs the PRD §4 pipeline. Temp file deleted before return (no-storage ruling).
 func (h *TaskHandler) SubmitAudio(c *gin.Context) {
 	taskID := c.Param("id")
@@ -93,7 +121,8 @@ func (h *TaskHandler) SubmitAudio(c *gin.Context) {
 		return
 	}
 
-	result, err := h.submissions.SubmitAudio(c.Request.Context(), taskID, audio, fh.Filename, chapterTitle)
+	name, code := sessionIdentity(c)
+	result, err := h.submissions.SubmitAudio(c.Request.Context(), taskID, audio, fh.Filename, chapterTitle, name, code)
 	if err != nil {
 		if errors.Is(err, service.ErrNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "task not found"})
@@ -120,7 +149,8 @@ func (h *TaskHandler) SubmitText(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "transcribed text required"})
 		return
 	}
-	result, err := h.submissions.SubmitText(c.Request.Context(), c.Param("id"), input.Transcribed, input.DurationSec)
+	name, code := sessionIdentity(c)
+	result, err := h.submissions.SubmitText(c.Request.Context(), c.Param("id"), input.Transcribed, input.DurationSec, name, code)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrNotFound):

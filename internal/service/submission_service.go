@@ -15,6 +15,15 @@ type TaskReader interface {
 
 type SubmissionStore interface {
 	Create(s *model.AudioSubmission) error
+	LatestByCode(code string) ([]model.ScoreRow, error)
+}
+
+// strptr keeps pre-name rows NULL-shaped instead of empty-string.
+func strptr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 type WhisperClient interface {
@@ -52,7 +61,7 @@ type SubmissionResult struct {
 
 // SubmitAudio runs the PRD §4 pipeline: transcribe → metrics → Groq batch → log.
 // Only SPEAKING_RECORDING tasks accepted; audio bytes never persisted (no-storage ruling).
-func (s *SubmissionService) SubmitAudio(ctx context.Context, taskID string, audio []byte, filename, culturalTopic string) (*SubmissionResult, error) {
+func (s *SubmissionService) SubmitAudio(ctx context.Context, taskID string, audio []byte, filename, culturalTopic, studentName, accessCode string) (*SubmissionResult, error) {
 	task, err := s.tasks.FindByID(taskID)
 	if err != nil {
 		return nil, ErrNotFound
@@ -87,11 +96,13 @@ func (s *SubmissionService) SubmitAudio(ctx context.Context, taskID string, audi
 	result := &SubmissionResult{
 		TranscribedText: tr.Text, WordAccuracyScore: accuracy, FluencyScore: fluency,
 		PronunciationScore: fb.OverallScore, WPM: wpm, Feedback: fb,
+		Mispronounced: scoring.Align(reference, tr.Text),
 	}
 	_ = s.submissions.Create(&model.AudioSubmission{
 		TaskID: taskID, AudioFileURL: nil, TranscribedText: tr.Text,
 		WordAccuracyScore: accuracy, FluencyScore: fluency,
 		PronunciationScore: fb.OverallScore, CreatedAt: time.Now(),
+		StudentName: strptr(studentName), AccessCode: strptr(accessCode),
 	}) // analytical log best-effort; scoring result stands regardless
 	return result, nil
 }
@@ -99,7 +110,7 @@ func (s *SubmissionService) SubmitAudio(ctx context.Context, taskID string, audi
 // SubmitText scores a client-transcribed utterance: pure-Go metrics, zero Groq.
 // Built for 40-concurrent classrooms where Whisper-per-submit 502s. Duration
 // is client wall-clock (includes thinking pauses — WPM skews low, noted).
-func (s *SubmissionService) SubmitText(ctx context.Context, taskID, transcribed string, durationSec float64) (*SubmissionResult, error) {
+func (s *SubmissionService) SubmitText(ctx context.Context, taskID, transcribed string, durationSec float64, studentName, accessCode string) (*SubmissionResult, error) {
 	_ = ctx
 	if len(transcribed) == 0 || len(transcribed) > 2000 {
 		return nil, ErrValidation
@@ -128,9 +139,15 @@ func (s *SubmissionService) SubmitText(ctx context.Context, taskID, transcribed 
 	_ = s.submissions.Create(&model.AudioSubmission{
 		TaskID: taskID, AudioFileURL: nil, TranscribedText: transcribed,
 		WordAccuracyScore: accuracy, FluencyScore: fluency,
-		CreatedAt: time.Now(),
+		CreatedAt:   time.Now(),
+		StudentName: strptr(studentName), AccessCode: strptr(accessCode),
 	}) // analytical log best-effort; scoring result stands regardless
 	return result, nil
+}
+
+// LatestByCode serves the teacher Nilai view: newest score per (student, task).
+func (s *SubmissionService) LatestByCode(code string) ([]model.ScoreRow, error) {
+	return s.submissions.LatestByCode(code)
 }
 
 // ChapterAttempt is one client-held practice result (latest per task; see

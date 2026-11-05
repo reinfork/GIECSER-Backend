@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"strings"
 	"time"
 
 	"asri-backend/internal/model"
@@ -72,9 +73,11 @@ func (s *AccessService) IssuePIN(ctx context.Context, ttlHours int, teacherID *s
 }
 
 // ValidatePIN checks cache → DB, then mints an unscoped session JWT.
-func (s *AccessService) ValidatePIN(ctx context.Context, code string) (token string, expiresAt time.Time, err error) {
+func (s *AccessService) ValidatePIN(ctx context.Context, code, name string) (token string, expiresAt time.Time, err error) {
+	code = strings.ToUpper(strings.TrimSpace(code))
+	name = strings.TrimSpace(name)
 	if ok, err := s.cache.GetPIN(ctx, code); err == nil && ok {
-		return s.mintSession()
+		return s.mintSession(name, code)
 	}
 	ac, err := s.codes.FindByCode(code)
 	if err != nil {
@@ -87,11 +90,11 @@ func (s *AccessService) ValidatePIN(ctx context.Context, code string) (token str
 		return "", time.Time{}, ErrExpired
 	}
 	_ = s.cache.SetPIN(ctx, code, time.Until(ac.ExpiresAt))
-	return s.mintSession()
+	return s.mintSession(name, code)
 }
 
-func (s *AccessService) mintSession() (string, time.Time, error) {
-	token, err := SessionToken(s.sessionTTLHours)
+func (s *AccessService) mintSession(name, code string) (string, time.Time, error) {
+	token, err := SessionToken(s.sessionTTLHours, name, code)
 	if err != nil {
 		return "", time.Time{}, err
 	}

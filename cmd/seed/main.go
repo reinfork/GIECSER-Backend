@@ -1,11 +1,3 @@
-// Command seed provisions the teacher account and curriculum content.
-// Speaking-first: passages, monologues, dialogues, pronunciation models and
-// speaking tasks, plus comprehension quizzes where the book provides keys.
-// Idempotent per chapter (title-keyed skip).
-// Usage: TEACHER_EMAIL=... TEACHER_PASSWORD=... go run ./cmd/seed
-// Revert Chapter 1 to supervisor FINAL: go run ./cmd/seed -reseed-ch1
-// Revert Chapter 2 to supervisor FINAL: go run ./cmd/seed -reseed-ch2
-// Revert Chapter 3 to supervisor FINAL: go run ./cmd/seed -reseed-ch3
 package main
 
 import (

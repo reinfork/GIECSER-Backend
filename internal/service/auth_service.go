@@ -60,12 +60,15 @@ func (s *AuthService) TeacherLogin(input model.TeacherLoginInput) (string, *mode
 
 // SessionToken mints a short-lived kind=session JWT. Unscoped by design:
 // one classroom code opens the whole book (no per-chapter gating).
-func SessionToken(ttlHours int) (string, error) {
+// Name+code ride in claims so submits attribute server-side, not per-request.
+func SessionToken(ttlHours int, name, code string) (string, error) {
 	if ttlHours < 1 {
 		ttlHours = 12
 	}
 	return signToken(jwt.MapClaims{
 		"kind": "session",
+		"name": name,
+		"code": code,
 		"exp":  time.Now().Add(time.Duration(ttlHours) * time.Hour).Unix(),
 		"iat":  time.Now().Unix(),
 	})

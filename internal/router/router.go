@@ -66,7 +66,7 @@ func registerRoutes(r *gin.Engine, db *gorm.DB, cfg Config) {
 	)
 
 	// Handlers
-	healthHandler := handler.NewHealthHandler()
+	healthHandler := handler.NewHealthHandler(db, redisStore)
 	authHandler := handler.NewAuthHandler(authService)
 	accessHandler := handler.NewAccessHandler(accessService)
 	chapterHandler := handler.NewChapterHandler(chapterService)

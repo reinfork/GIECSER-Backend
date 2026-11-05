@@ -18,15 +18,13 @@ func NewAccessHandler(service *service.AccessService) *AccessHandler {
 	return &AccessHandler{service: service}
 }
 
-// ValidatePIN exchanges a 6-char classroom code for a session JWT
-// opening the whole book.
 func (h *AccessHandler) ValidatePIN(c *gin.Context) {
 	var input model.ValidatePINInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	token, expiresAt, err := h.service.ValidatePIN(c.Request.Context(), input.Code)
+	token, expiresAt, err := h.service.ValidatePIN(c.Request.Context(), input.Code, input.Name)
 	if err != nil {
 		if errors.Is(err, service.ErrUnauthorized) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired code"})

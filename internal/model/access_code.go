@@ -15,6 +15,7 @@ type AccessCode struct {
 
 type ValidatePINInput struct {
 	Code string `json:"code" binding:"required,len=6"`
+	Name string `json:"name" binding:"required,min=2,max=60"`
 }
 
 type IssuePINInput struct {

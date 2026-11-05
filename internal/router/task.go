@@ -22,4 +22,8 @@ func registerTaskRoutes(r *gin.Engine, h *handler.TaskHandler, auth, teacher gin
 		tasks.PUT("/:id", auth, teacher, h.Update)
 		tasks.DELETE("/:id", auth, teacher, h.Delete)
 	}
+	scores := r.Group("/scores")
+	{
+		scores.GET("", auth, teacher, h.ScoresByCode)
+	}
 }
