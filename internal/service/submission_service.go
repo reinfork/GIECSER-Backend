@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"asri-backend/internal/groq"
@@ -148,6 +149,44 @@ func (s *SubmissionService) SubmitText(ctx context.Context, taskID, transcribed 
 // LatestByCode serves the teacher Nilai view: newest score per (student, task).
 func (s *SubmissionService) LatestByCode(code string) ([]model.ScoreRow, error) {
 	return s.submissions.LatestByCode(code)
+}
+
+// CheckResult reveals the key only inside an attempt response —
+// keys never ride GETs. Nothing stored: formative by design.
+type CheckResult struct {
+	Correct  bool            `json:"correct"`
+	Expected any             `json:"expected"`
+	Detail   map[string]bool `json:"detail,omitempty"`
+}
+
+func emptyAnswer(a any) bool {
+	switch v := a.(type) {
+	case nil:
+		return true
+	case string:
+		return v == ""
+	case []any:
+		return len(v) == 0
+	case map[string]any:
+		return len(v) == 0
+	}
+	return false
+}
+
+// CheckAnswer grades one attempt and reveals the expected answer.
+func (s *SubmissionService) CheckAnswer(ctx context.Context, taskID string, answer any) (*CheckResult, error) {
+	_ = ctx
+	if emptyAnswer(answer) {
+		return nil, ErrValidation // no free reveal without an attempt
+	}
+	task, err := s.tasks.FindByID(taskID)
+	if err != nil {
+		return nil, ErrNotFound
+	}
+	ok, detail := scoring.Check(task.Type, task.AnswerKeyJSON, answer)
+	var expected any
+	_ = json.Unmarshal([]byte(task.AnswerKeyJSON), &expected)
+	return &CheckResult{Correct: ok, Expected: expected, Detail: detail}, nil
 }
 
 // ChapterAttempt is one client-held practice result (latest per task; see

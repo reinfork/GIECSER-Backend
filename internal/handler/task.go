@@ -56,8 +56,32 @@ func (h *TaskHandler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, task.Public())
 }
 
+// CheckAnswer grades one attempt and reveals the expected answer.
+// Attempt required: empty answers 400 instead of leaking keys.
+func (h *TaskHandler) CheckAnswer(c *gin.Context) {
+	var input struct {
+		Answer any `json:"answer"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "answer required"})
+		return
+	}
+	result, err := h.submissions.CheckAnswer(c.Request.Context(), c.Param("id"), input.Answer)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "task not found"})
+		case errors.Is(err, service.ErrValidation):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "answer required"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+	c.JSON(http.StatusOK, result)
+}
+
 // sessionIdentity reads the name+code the validate step sealed into the JWT.
-// Empty when the caller is a teacher token (teacher submits carry no student).
 func sessionIdentity(c *gin.Context) (name, code string) {
 	if v, ok := c.Get("claims"); ok {
 		if m, ok := v.(jwt.MapClaims); ok {
