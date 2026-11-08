@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"asri-backend/internal/groq"
@@ -12,11 +15,13 @@ import (
 
 type TaskReader interface {
 	FindByID(id string) (*model.Task, error)
+	FindByModule(moduleID string) ([]model.Task, error)
 }
 
 type SubmissionStore interface {
 	Create(s *model.AudioSubmission) error
 	LatestByCode(code string) ([]model.ScoreRow, error)
+	LatestByStudent(code, name, chapterID string) ([]model.ScoreRow, error)
 }
 
 // strptr keeps pre-name rows NULL-shaped instead of empty-string.
@@ -60,6 +65,44 @@ type SubmissionResult struct {
 	Feedback           *groq.Feedback `json:"feedback"`
 }
 
+// referenceFor picks what a speaking attempt is scored against. Question
+// prompts ("...?") use the seeded Model answer when present — scoring a
+// 2-sentence answer against a whole monologue transcript yields ~10% for a
+// perfect answer. Plain repeat prompts keep module transcript, else prompt.
+func referenceFor(prompt, optionsJSON, moduleTranscript string) string {
+	if strings.HasSuffix(strings.TrimSpace(prompt), "?") {
+		var o struct {
+			ModelAnswer string `json:"Model answer"`
+		}
+		if json.Unmarshal([]byte(optionsJSON), &o) == nil && o.ModelAnswer != "" {
+			return o.ModelAnswer
+		}
+	}
+	if moduleTranscript != "" {
+		return moduleTranscript
+	}
+	return prompt
+}
+
+// textDelta compensates the browser-transcript path's known downward bias
+// (SR noise + wall-clock duration deflating WPM). Env-tuned, default 0.
+// shortcut: flat boost, not bias modeling — recalibrate from pilot score
+// distributions; per-task adaptive compensation when research demands it.
+func textDelta() float64 {
+	d, err := strconv.ParseFloat(os.Getenv("SUBMIT_TEXT_DELTA"), 64)
+	if err != nil || d < 0 {
+		return 0
+	}
+	return d
+}
+
+func boost(v, d float64) float64 {
+	if v+d > 100 {
+		return 100
+	}
+	return v + d
+}
+
 // SubmitAudio runs the PRD §4 pipeline: transcribe → metrics → Groq batch → log.
 // Only SPEAKING_RECORDING tasks accepted; audio bytes never persisted (no-storage ruling).
 func (s *SubmissionService) SubmitAudio(ctx context.Context, taskID string, audio []byte, filename, culturalTopic, studentName, accessCode string) (*SubmissionResult, error) {
@@ -76,10 +119,11 @@ func (s *SubmissionService) SubmitAudio(ctx context.Context, taskID string, audi
 		return nil, err
 	}
 
-	reference := task.Prompt
-	if module, err := s.modules.FindByID(task.ModuleID); err == nil && module.TargetTranscript != "" {
-		reference = module.TargetTranscript
+	transcript := ""
+	if module, err := s.modules.FindByID(task.ModuleID); err == nil {
+		transcript = module.TargetTranscript
 	}
+	reference := referenceFor(task.Prompt, task.OptionsJSON, transcript)
 	wer, _, _, _, _ := scoring.WER(reference, tr.Text)
 	accuracy := scoring.Accuracy(wer)
 	words := scoring.Words(tr.Text)
@@ -100,7 +144,7 @@ func (s *SubmissionService) SubmitAudio(ctx context.Context, taskID string, audi
 		Mispronounced: scoring.Align(reference, tr.Text),
 	}
 	_ = s.submissions.Create(&model.AudioSubmission{
-		TaskID: taskID, AudioFileURL: nil, TranscribedText: tr.Text,
+		TaskID: taskID, Source: "audio", AudioFileURL: nil, TranscribedText: tr.Text,
 		WordAccuracyScore: accuracy, FluencyScore: fluency,
 		PronunciationScore: fb.OverallScore, CreatedAt: time.Now(),
 		StudentName: strptr(studentName), AccessCode: strptr(accessCode),
@@ -123,14 +167,15 @@ func (s *SubmissionService) SubmitText(ctx context.Context, taskID, transcribed 
 	if task.Type != model.TaskSpeakingRecording {
 		return nil, ErrUnsupported
 	}
-	reference := task.Prompt
-	if module, err := s.modules.FindByID(task.ModuleID); err == nil && module.TargetTranscript != "" {
+	reference := ""
+	if module, err := s.modules.FindByID(task.ModuleID); err == nil {
 		reference = module.TargetTranscript
 	}
+	reference = referenceFor(task.Prompt, task.OptionsJSON, reference)
 	wer, _, _, _, _ := scoring.WER(reference, transcribed)
-	accuracy := scoring.Accuracy(wer)
+	accuracy := boost(scoring.Accuracy(wer), textDelta())
 	wpm := scoring.WPM(len(scoring.Words(transcribed)), durationSec)
-	fluency := scoring.FluencyScore(wpm)
+	fluency := boost(scoring.FluencyScore(wpm), textDelta())
 	words := scoring.Align(reference, transcribed)
 
 	result := &SubmissionResult{
@@ -138,7 +183,7 @@ func (s *SubmissionService) SubmitText(ctx context.Context, taskID, transcribed 
 		WPM: wpm, Mispronounced: words,
 	}
 	_ = s.submissions.Create(&model.AudioSubmission{
-		TaskID: taskID, AudioFileURL: nil, TranscribedText: transcribed,
+		TaskID: taskID, Source: "text", AudioFileURL: nil, TranscribedText: transcribed,
 		WordAccuracyScore: accuracy, FluencyScore: fluency,
 		CreatedAt:   time.Now(),
 		StudentName: strptr(studentName), AccessCode: strptr(accessCode),
@@ -149,6 +194,105 @@ func (s *SubmissionService) SubmitText(ctx context.Context, taskID, transcribed 
 // LatestByCode serves the teacher Nilai view: newest score per (student, task).
 func (s *SubmissionService) LatestByCode(code string) ([]model.ScoreRow, error) {
 	return s.submissions.LatestByCode(code)
+}
+
+// GateTask is one scored (speaking) task in a gate's scope.
+type GateTask struct {
+	TaskID      string `json:"task_id"`
+	ModuleID    string `json:"module_id"`
+	ModuleTitle string `json:"module_title"`
+}
+
+// GateResult is a student's progress across one gate scope: pass needs every
+// scope task attempted with average word accuracy >= 80.
+type GateResult struct {
+	Scope     []GateTask       `json:"scope"`
+	Rows      []model.ScoreRow `json:"rows"`
+	Attempted int              `json:"attempted"`
+	Average   float64          `json:"average"`
+	Pass      bool             `json:"pass"`
+}
+
+// GateScores scopes to speaking tasks in same-course modules ordered before
+// the gate module (whole chapter when beforeModuleID is empty or yields no
+// tasks, e.g. the Self-Reflection overall gate). Quiz tasks score nothing
+// server-side, so only SPEAKING_RECORDING tasks can gate.
+func (s *SubmissionService) GateScores(code, name, chapterID, beforeModuleID string) (*GateResult, error) {
+	rows, err := s.submissions.LatestByStudent(code, name, chapterID)
+	if err != nil {
+		return nil, err
+	}
+	var scope []GateTask
+	collect := func(m model.Module) error {
+		tasks, err := s.tasks.FindByModule(m.ID)
+		if err != nil {
+			return err
+		}
+		for _, t := range tasks {
+			if t.Type == model.TaskSpeakingRecording {
+				scope = append(scope, GateTask{TaskID: t.ID, ModuleID: m.ID, ModuleTitle: m.Title})
+			}
+		}
+		return nil
+	}
+	if beforeModuleID != "" {
+		gate, err := s.modules.FindByID(beforeModuleID)
+		if err != nil {
+			return nil, ErrNotFound
+		}
+		mods, err := s.modules.FindByCourse(gate.CourseID)
+		if err != nil {
+			return nil, err
+		}
+		for _, m := range mods {
+			if m.OrderIndex < gate.OrderIndex {
+				if err := collect(m); err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+	if len(scope) == 0 {
+		courses, err := s.courses.FindByChapter(chapterID)
+		if err != nil {
+			return nil, err
+		}
+		for _, c := range courses {
+			mods, err := s.modules.FindByCourse(c.ID)
+			if err != nil {
+				return nil, err
+			}
+			for _, m := range mods {
+				if err := collect(m); err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+	byTask := map[string]model.ScoreRow{}
+	for _, r := range rows {
+		byTask[r.TaskID] = r
+	}
+	inScope := map[string]bool{}
+	for _, g := range scope {
+		inScope[g.TaskID] = true
+	}
+	var inRows []model.ScoreRow
+	var sum float64
+	for _, r := range rows {
+		if inScope[r.TaskID] {
+			inRows = append(inRows, r)
+			sum += r.WordAccuracyScore
+		}
+	}
+	avg := 0.0
+	if len(inRows) > 0 {
+		avg = sum / float64(len(inRows))
+	}
+	return &GateResult{
+		Scope: scope, Rows: inRows, Attempted: len(inRows), Average: avg,
+		Pass: len(scope) > 0 && len(inRows) == len(scope) && avg >= 80,
+	}, nil
 }
 
 // CheckResult reveals the key only inside an attempt response —

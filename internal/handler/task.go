@@ -107,6 +107,31 @@ func (h *TaskHandler) ScoresByCode(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": rows})
 }
 
+// MyScores serves the student's own section-gate progress. Scoped strictly
+// by the session identity — teacher tokens carry none and get 403.
+func (h *TaskHandler) MyScores(c *gin.Context) {
+	name, code := sessionIdentity(c)
+	if name == "" || code == "" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "student session required"})
+		return
+	}
+	chapterID := strings.TrimSpace(c.Query("chapter_id"))
+	if chapterID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "chapter_id query required"})
+		return
+	}
+	res, err := h.submissions.GateScores(code, name, chapterID, strings.TrimSpace(c.Query("before_module_id")))
+	if err != nil {
+		if errors.Is(err, service.ErrNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "module not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
 // SubmitAudio runs the PRD §4 pipeline. Temp file deleted before return (no-storage ruling).
 func (h *TaskHandler) SubmitAudio(c *gin.Context) {
 	taskID := c.Param("id")

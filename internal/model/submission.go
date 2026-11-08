@@ -22,9 +22,12 @@ type ScoreRow struct {
 // per-student score store: student_name + access_code attribute each row.
 // AudioFileURL stays NULL: clips are scored then deleted (privacy + storage ruling).
 // Teacher Nilai reads via LatestByCode — the research-direct-read ruling it replaces.
+// Source marks the scoring path ("audio" = Whisper+Groq, "text" = browser
+// transcript + pure-Go metrics + SUBMIT_TEXT_DELTA) so research can split them.
 type AudioSubmission struct {
 	ID                 string  `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
 	TaskID             string  `json:"task_id" gorm:"type:uuid;not null;index"`
+	Source             string  `json:"source"`
 	AudioFileURL       *string `json:"audio_file_url"`
 	TranscribedText    string  `json:"transcribed_text" gorm:"type:text"`
 	WordAccuracyScore  float64 `json:"word_accuracy_score"`

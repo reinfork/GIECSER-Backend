@@ -1,8 +1,8 @@
 // Chapter 1 rebuilt from Seeder Brief Chapter 1 only (supervisor call).
-// Every module maps to a brief item; keys live in AnswerKeyJSON and reveal
-// after an attempt, except the Monologue Q&A (#18) whose answers show
-// outright. Self-reflection, overall feedback and mastery live in the
-// frontend — no rows by design.
+// 7 courses = GECISER phases; every module maps to a brief item; keys live
+// in AnswerKeyJSON and reveal after an attempt, except the Oral Questions
+// whose answers show outright. ASR Feedback / Self-Reflection / Mastery are
+// task-less modules (frontend gates) — no schema change by design.
 package main
 
 import "asri-backend/internal/model"
@@ -39,9 +39,9 @@ func ch1Final() seedChapter {
 		title: "Traditional Games",
 		desc:  "Mendeskripsikan dan menjelaskan aturan permainan tradisional Melayu Riau pesisir secara lisan dalam bahasa Inggris.",
 		courses: []seedCourse{
-			{title: "Learning Objectives", desc: "Kemampuan yang dicapai setelah mempelajari topik ini.", modules: []seedModule{
+			{title: "1. Goal Setting", desc: "Goal Setting — kemampuan yang dicapai setelah mempelajari topik ini (brief #1).", modules: []seedModule{
 				{title: "What You Will Learn", typ: model.ModuleMonologue,
-					content:    "After learning this topic, you are able to:",
+					content:    "By the end of the lesson: I can explain Jong Layo in English for 5-7 minutes correctly and fluently; I can describe how to play Jong Layo in English for 5-7 minutes correctly and fluently. After learning this topic, you are able to:",
 					transcript: "After learning this topic, you are able to: name several Riau Malay traditional games; describe a traditional game using simple English; explain how to play a traditional game; ask and answer questions about traditional games; express likes and dislikes; give simple opinions about traditional games; invite friends to play a traditional game; demonstrate and present a traditional game in English.",
 					order:      1, tasks: []seedTask{
 						quizTask(model.TaskOpenEnded, "After learning this topic, you are able to:",
@@ -49,7 +49,7 @@ func ch1Final() seedChapter {
 							``),
 					}},
 			}},
-			{title: "History of Coastal Games", desc: "Monologue, speaking practice and answer key.", modules: []seedModule{
+			{title: "2. Input & Exploration", desc: "Input & Exploration — monologue, Table 4, Jong Layo, vocabulary, pronunciation, expressions, Congklak video (brief #2-13).", modules: []seedModule{
 				{title: "The History Monologue", typ: model.ModuleMonologue,
 					content:    "Please listen to the monologue carefully. Repeat it clearly and loudly.",
 					transcript: history, order: 1, tasks: []seedTask{
@@ -60,15 +60,17 @@ func ch1Final() seedChapter {
 						seedTask{typ: model.TaskSpeakingRecording, prompt: "What materials are commonly used to make traditional game equipment in coastal Riau?", options: `{"Model answer":"Traditional games commonly use wood, coconut shells, bamboo, rattan, seeds, and shells."}`},
 						seedTask{typ: model.TaskSpeakingRecording, prompt: "What can children learn from playing traditional games such as gasing, bakiak, or congkak? Give at least three values.", options: `{"Model answer":"Children can learn many important values from traditional games. They can learn teamwork, communication, patience, concentration, discipline, coordination, and fair play and appreciate their local culture."}`},
 					}},
-			}},
-			{title: "Kinds of Games", desc: "Table 4 RIAU MALAY TRADITIONAL GAMES.", modules: []seedModule{
+
+				{title: "ASR Feedback", typ: model.ModuleMonologue,
+					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next step. My score is: ___%.",
+					order:   2},
+
 				{title: "Table 4: Kinds of Games", typ: model.ModuleMonologue,
 					content:    "Table 4 RIAU MALAY TRADITIONAL GAMES: games played on the water and on land, with meanings.",
 					transcript: kinds, order: 1, tasks: []seedTask{
 						speakTask("Name five games from Table 4 and say what each uses.", ""),
 					}},
-			}},
-			{title: "How to Play Jong Layo", desc: "Monologue, questions and answer key.", modules: []seedModule{
+
 				{title: "Jong Layo", typ: model.ModuleMonologue,
 					content:    "Listen to the monologue, then read it aloud.",
 					transcript: jongShort, order: 1, tasks: []seedTask{
@@ -87,16 +89,14 @@ func ch1Final() seedChapter {
 						quizTask(model.TaskOpenEnded, "How can we preserve Jong Layo as part of Malay culture?", "",
 							`{"answers":["We can preserve Jong Layo by learning how to play it, practicing it with our friends, participating in traditional games and cultural events, and teaching younger generations about this traditional game"]}`),
 					}},
-			}},
-			{title: "Vocabulary", desc: "Tables with TTS on each cell.", modules: []seedModule{
+
 				{title: "Boat Parts", typ: model.ModuleMonologue,
 					content:    "Words related to the Jong Layo game, with Indonesian meanings.",
 					transcript: boatParts, order: 1},
 				{title: "Game Words", typ: model.ModuleMonologue,
 					content:    "Twelve words with meanings.",
 					transcript: gameWords, order: 2},
-			}},
-			{title: "Pronunciation", desc: "Listen and repeat each word.", modules: []seedModule{
+
 				{title: "Nouns", typ: model.ModuleMonologue,
 					content:    "Listen and repeat each noun.",
 					transcript: nouns, order: 1},
@@ -106,8 +106,7 @@ func ch1Final() seedChapter {
 				{title: "Adjectives", typ: model.ModuleMonologue,
 					content:    "Listen and repeat each adjective.",
 					transcript: adjs, order: 3},
-			}},
-			{title: "Language Expression", desc: "Expressions and form questions.", modules: []seedModule{
+
 				{title: "Expressions", typ: model.ModuleMonologue, content: langExpr, order: 1, tasks: []seedTask{
 					speakTask("How many teams are there?", ""),
 					speakTask("What does one team do?", ""),
@@ -115,15 +114,22 @@ func ch1Final() seedChapter {
 					speakTask("What skills do players need?", ""),
 					speakTask("Why is the game fun?", ""),
 				}},
-			}},
-			{title: "Congklak and Language", desc: "Video, language functions and grammar.", modules: []seedModule{
+
+				{title: "ASR Feedback", typ: model.ModuleMonologue,
+					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next step. My score is: ___%.",
+					order:   11},
+
 				{title: "Congklak Games (Video)", typ: model.ModuleVideo,
 					content: "The Congklak game is one of the Riau traditional games. It is usually played by kids and women. Please watch the video carefully.",
 					media:   "https://www.youtube.com/watch?v=An0syZQapfA", order: 1},
 				{title: "Language Function", typ: model.ModuleMonologue, content: langFunc, order: 2},
 				{title: "Grammar Focus", typ: model.ModuleMonologue, content: grammar, order: 3},
+
+				{title: "ASR Feedback", typ: model.ModuleMonologue,
+					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next step. My score is: ___%.",
+					order:   15},
 			}},
-			{title: "Comprehension Check", desc: "Video, dialogues, quizzes and oral questions.", modules: []seedModule{
+			{title: "3. Comprehension Check", desc: "Comprehension Check — video, dialogues, quizzes and oral questions (brief #14-20).", modules: []seedModule{
 				{title: "How to Make Jong Layo (Video)", typ: model.ModuleVideo, content: "Watch how to make Jong Layo and how to play it.", media: "https://drive.google.com/uc?export=download&id=1QvjMecLLTMBoWvuDhK0S6paChAQUZwQo", order: 1, tasks: []seedTask{
 					quizTask(model.TaskOpenEnded, "Jong Layo is commonly played by children in _______.", "", `{"answers":["Riau"]}`),
 					quizTask(model.TaskOpenEnded, "What materials are used to make Jong Layo?", "", `{"answers":["Tree trunk, plastic, and rope"]}`),
@@ -171,8 +177,12 @@ func ch1Final() seedChapter {
 				{title: "Story Order", typ: model.ModuleMonologue, content: "Rearrange the sentences into the correct order, then speak the complete story aloud.", transcript: "A. The players prepare their boats and put them on the water. B. Jong Layo is a traditional game from Riau. C. Players can learn how to make and decorate a small boat. D. The game can be played by several people. E. Jong Layo combines creativity, tradition, and fun. F. The boat is usually made and decorated creatively.", order: 7, tasks: []seedTask{
 					quizTask(model.TaskOpenEnded, "Rearrange A-F into the correct story order.", `{"sentences":["A","B","C","D","E","F"]}`, `{"order":["B","F","D","A","C","E"]}`),
 				}},
+
+				{title: "ASR Feedback", typ: model.ModuleMonologue,
+					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next step. My score is: ___%.",
+					order:   8},
 			}},
-			{title: "Guided Speaking", desc: "Galah Panjang monologue, dialogue and vocabulary.", modules: []seedModule{
+			{title: "4. Guided Speaking", desc: "Guided Speaking — Galah Panjang monologue, dialogue and vocabulary (brief #21-24).", modules: []seedModule{
 				{title: "Galah Panjang", typ: model.ModuleMonologue, content: "Listen to the monologue and answer the guiding questions orally: Have you ever played Galah Panjang? Do you know how to make Galah Panjang? What materials are used to make Galah? Where can you get the materials?", transcript: galah, order: 1, tasks: []seedTask{
 					speakTask("Answer the guiding questions orally and record your answer.", ""),
 					quizTask(model.TaskOpenEnded, "Complete with words from the text: Galah Panjang is a traditional (1)____ game. Players are divided into (2)____ teams. One team tries to (3)____ the lines. The game needs teamwork and (4)____. It can be played by (5)____ or children.",
@@ -182,12 +192,33 @@ func ch1Final() seedChapter {
 					speakTask("Choose a role and read your lines aloud.", ""),
 				}},
 				{title: "Galah Panjang Vocabulary", typ: model.ModuleMonologue, content: "Please listen to the pronunciation model and repeat.", transcript: galahVocab, order: 3},
+
+				{title: "ASR Feedback", typ: model.ModuleMonologue,
+					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next step. My score is: ___%.",
+					order:   4},
 			}},
-			{title: "Independent Speaking", desc: "Present a traditional game without reading the script.", modules: []seedModule{
+			{title: "5. Independent Speaking", desc: "Independent Speaking — present a traditional game without reading the script (brief #25-26).", modules: []seedModule{
 				{title: "My Presentation", typ: model.ModuleOralTest, content: "Develop a monologue about Riau Malay Traditional Games. Speak for 3 to 5 minutes without reading the script. Describe the physical appearance, preparation, and the benefits. Choose one game: Bakiak, Gasing, Layang-layang, Pacu kolek, Lulu Cina Buta, Selambut, Benteng, Engrang. Record the monologue by clicking the record button.", transcript: pacu, order: 1, tasks: []seedTask{
 					speakTask("Present your monologue for 3 to 5 minutes without reading, then record.", ""),
 				}},
 				{title: "Language Functions Reference", typ: model.ModuleMonologue, content: "Describing: Jong Layo is a unique traditional game from Riau. Asking: How do you play it? Giving information: Two players can play the game. Opinions: I think it is exciting. Reasons: I like Galah Panjang because it is exciting and I can play it with friends. Inviting: Let's play Galah Panjang!", order: 2},
+
+				{title: "ASR Feedback", typ: model.ModuleMonologue,
+					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to Self-Reflection. My score is: ___%.",
+					order:   3},
+			}},
+			{title: "6. Self-Reflection", desc: "Self-Reflection — evaluate speaking, identify difficulty, plan improvement (brief #27-28).", modules: []seedModule{
+				{title: "My Reflection", typ: model.ModuleMonologue,
+					content: "Did I speak fluently? Did I pronounce the words correctly? Did I use appropriate vocabulary? What was my biggest difficulty? What should I improve?",
+					order:   1},
+				{title: "Overall ASR Feedback", typ: model.ModuleMonologue,
+					content: "Check the overall ASR feedback for this chapter. When you reach 80% correct, continue to Re-practice and Mastery. My score is: ___%.",
+					order:   2},
+			}},
+			{title: "7. Re-practice and Mastery", desc: "Re-practice low scores, enrichment for high scores, then next lesson (brief #29).", modules: []seedModule{
+				{title: "Practice and Mastery", typ: model.ModuleMonologue,
+					content: "Speaking 1 > ASR Feedback > Self-Reflection > Re-practice (low scores). Speaking 2 > ASR Feedback > Self-Reflection > Enrichment (high scores). If the goal is reached: next lesson.",
+					order:   1},
 			}},
 		},
 	}

@@ -27,4 +27,8 @@ func registerTaskRoutes(r *gin.Engine, h *handler.TaskHandler, auth, teacher gin
 	{
 		scores.GET("", auth, teacher, h.ScoresByCode)
 	}
+	my := r.Group("/my")
+	{
+		my.GET("/scores", auth, h.MyScores)
+	}
 }
