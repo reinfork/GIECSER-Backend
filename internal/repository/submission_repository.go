@@ -29,7 +29,7 @@ func (r *SubmissionRepository) LatestByStudent(code, name, chapterID string) ([]
 			s.student_name, s.task_id, t.type AS task_type,
 			ch.title AS chapter_title, c.title AS course_title, m.title AS module_title,
 			s.transcribed_text, s.word_accuracy_score, s.fluency_score,
-			s.pronunciation_score, s.created_at
+			s.pronunciation_score, s.wpm, s.created_at
 		FROM audio_submissions s
 		JOIN tasks t ON t.id = s.task_id
 		JOIN modules m ON m.id = t.module_id
@@ -50,7 +50,7 @@ func (r *SubmissionRepository) LatestByCode(code string) ([]model.ScoreRow, erro
 			s.student_name, s.task_id, t.type AS task_type,
 			ch.title AS chapter_title, c.title AS course_title, m.title AS module_title,
 			s.transcribed_text, s.word_accuracy_score, s.fluency_score,
-			s.pronunciation_score, s.created_at
+			s.pronunciation_score, s.wpm, s.created_at
 		FROM audio_submissions s
 		JOIN tasks t ON t.id = s.task_id
 		JOIN modules m ON m.id = t.module_id

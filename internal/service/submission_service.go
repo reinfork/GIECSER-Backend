@@ -146,7 +146,7 @@ func (s *SubmissionService) SubmitAudio(ctx context.Context, taskID string, audi
 	_ = s.submissions.Create(&model.AudioSubmission{
 		TaskID: taskID, Source: "audio", AudioFileURL: nil, TranscribedText: tr.Text,
 		WordAccuracyScore: accuracy, FluencyScore: fluency,
-		PronunciationScore: fb.OverallScore, CreatedAt: time.Now(),
+		PronunciationScore: fb.OverallScore, WPM: wpm, CreatedAt: time.Now(),
 		StudentName: strptr(studentName), AccessCode: strptr(accessCode),
 	}) // analytical log best-effort; scoring result stands regardless
 	return result, nil
@@ -184,7 +184,7 @@ func (s *SubmissionService) SubmitText(ctx context.Context, taskID, transcribed 
 	}
 	_ = s.submissions.Create(&model.AudioSubmission{
 		TaskID: taskID, Source: "text", AudioFileURL: nil, TranscribedText: transcribed,
-		WordAccuracyScore: accuracy, FluencyScore: fluency,
+		WordAccuracyScore: accuracy, FluencyScore: fluency, WPM: wpm,
 		CreatedAt:   time.Now(),
 		StudentName: strptr(studentName), AccessCode: strptr(accessCode),
 	}) // analytical log best-effort; scoring result stands regardless
@@ -201,6 +201,7 @@ type GateTask struct {
 	TaskID      string `json:"task_id"`
 	ModuleID    string `json:"module_id"`
 	ModuleTitle string `json:"module_title"`
+	Reference   string `json:"reference"`
 }
 
 // GateResult is a student's progress across one gate scope: pass needs every
@@ -230,7 +231,8 @@ func (s *SubmissionService) GateScores(code, name, chapterID, beforeModuleID str
 		}
 		for _, t := range tasks {
 			if t.Type == model.TaskSpeakingRecording {
-				scope = append(scope, GateTask{TaskID: t.ID, ModuleID: m.ID, ModuleTitle: m.Title})
+				scope = append(scope, GateTask{TaskID: t.ID, ModuleID: m.ID, ModuleTitle: m.Title,
+					Reference: referenceFor(t.Prompt, t.OptionsJSON, m.TargetTranscript)})
 			}
 		}
 		return nil

@@ -15,6 +15,7 @@ type ScoreRow struct {
 	WordAccuracyScore  float64   `json:"word_accuracy_score"`
 	FluencyScore       float64   `json:"fluency_score"`
 	PronunciationScore float64   `json:"pronunciation_score"`
+	WPM                float64   `json:"wpm"`
 	CreatedAt          time.Time `json:"created_at"`
 }
 
@@ -33,6 +34,7 @@ type AudioSubmission struct {
 	WordAccuracyScore  float64 `json:"word_accuracy_score"`
 	FluencyScore       float64 `json:"fluency_score"`
 	PronunciationScore float64 `json:"pronunciation_score"`
+	WPM                float64 `json:"wpm"`
 	// ponytail: nullable student key + code string (no FK — codes expire
 	// and rows must survive them); pre-name rows read back NULL.
 	StudentName *string   `json:"student_name"`
