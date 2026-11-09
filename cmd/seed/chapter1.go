@@ -1,8 +1,9 @@
 // Chapter 1 rebuilt from Seeder Brief Chapter 1 only (supervisor call).
-// 7 courses = GECISER phases; every module maps to a brief item; keys live
-// in AnswerKeyJSON and reveal after an attempt, except the Oral Questions
-// whose answers show outright. ASR Feedback / Self-Reflection / Mastery are
-// task-less modules (frontend gates) — no schema change by design.
+// 5 courses = GECISER phases 1-5; every module maps to a brief item; keys
+// live in AnswerKeyJSON and reveal after an attempt, except the Oral
+// Questions whose answers show outright. ASR Feedback gates are task-less
+// modules (frontend gates) — no schema change by design. Self-Reflection
+// and Mastery live on the chapter page (ChapterClose), not in the seed.
 package main
 
 import "asri-backend/internal/model"
@@ -26,7 +27,7 @@ func ch1Final() seedChapter {
 	galah := `Galah Panjang is a traditional team game. Players are divided into two teams. One team tries to cross the lines while the other team guards the lines. Players need to run and move quickly. The players cannot be touched by the guards. The game needs teamwork and strategy. It is fun and exciting to play with friends. Galah Panjang can be played by adults or children.`
 	tengku := `Tengku: Hey, we have some free time tomorrow afternoon. Do you want to hang out with the kids from the neighborhood? Siti: Sounds good, I'm getting bored of staying home and staring at my phone all day. What do you have in mind? Tengku: How about we get them to play Galah Panjang at the field near the village hall? It's been ages since we last played that traditional game. Siti: Oh, that's a great idea! But it usually requires quite a few people for two teams. Do we have enough players? Tengku: Don't worry, I chatted with a few of them briefly yesterday, and they're totally down. We can split into two teams, with at least three or four people each. Siti: Awesome! But get ready to run a lot—the line defenders have to be super agile so the opposing team can't slip past to the finish line. Tengku: Exactly, it's a great afternoon workout so our bodies aren't so stiff. I'll take care of bringing the chalk to draw the field lines. Siti: Alright then! I'll help message the others in the WhatsApp group so everyone heads to the field tomorrow afternoon.`
 	galahVocab := `Miniature boat => A small model of a boat. The player launches a lightweight miniature boat into the sea. ;; Boat => A vehicle used to travel on water. This unique sailing boat moves entirely powered by the wind. ;; Water => A liquid that covers rivers, lakes, and seas. The tiny vessel glides smoothly over the open water. ;; Competition => An event where people compete against each other. Local fishermen cheer loudly during the annual Jong competition. ;; Tradition => A custom, tradition, and way of life of a group of people. Racing Jong is a cherished coastal tradition in Riau. ;; Creativity => The ability to create new and original ideas. Crafting a winning Jong demands high artistic creativity. ;; Traditional boat race => A competitive sporting event where teams race traditional regional boats by rowing together. The annual traditional boat race attracts many visitors to the riverbank. ;; Kolek => A traditional wooden canoe used by Malay communities for traveling and fishing. Fishermen use a kolek to navigate through narrow rivers. ;; Race => A contest where participants compete to see who is the fastest to finish. Every team paddled as fast as they could to win the race. ;; Team => A group of people working or playing together to achieve a common goal. Each team consists of ten strong paddlers. ;; Culture => The shared customs, arts, and traditions passed down through generations in a society. We must preserve our local culture so it will never fade away. ;; Cooperation => The act of working together harmoniously to achieve a shared objective. Good cooperation helps the team move the boat smoothly. ;; Local community => A group of people sharing the same geographical area and cultural background. The local community enthusiastically supports the traditional festival. ;; Prize => A reward or trophy given to the winner of a competition. The champion received a trophy and a cash prize. ;; Winner => The person or group that finishes first or wins a competition. The committee announced village A as the winner. ;; River => A large natural stream of fresh water flowing across the land. People gathered along the wide river to watch the boats. ;; Water => The clear liquid flowing in rivers or oceans that allows boats to float. The wooden boat glided smoothly over the calm water.`
-	pacu := `Pacu Kolek is made from a coconut tree. Pacu Kolek is played in a team that consists of 4 to 10 players.`
+	funcTable := `Describing things/person => Pacu Kolek is a traditional boat race. ;; Asking for information => Where is it held? ;; Giving information => It is held in Riau. ;; Describing an activity => The racers are paddling. ;; Talking about experience => I watched it last year. ;; Expressing likes => I like Pacu Kolek. ;; Expressing opinions => I think it is exciting. ;; Giving reasons => I like it because it is exciting. ;; Expressing wishes => I would like to watch it. ;; Agreeing => I agree with you. ;; Responding => That's interesting! ;; Showing appreciation => It is an important cultural tradition.`
 
 	mcq := func(n int, stem, a, b, c, d, correct string) seedTask {
 		return quizTask(model.TaskMultipleChoice,
@@ -62,7 +63,7 @@ func ch1Final() seedChapter {
 					}},
 
 				{title: "ASR Feedback", typ: model.ModuleMonologue,
-					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next step. My score is: ___%.",
+					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next step.",
 					order:   2},
 
 				{title: "Table 4: Kinds of Games", typ: model.ModuleMonologue,
@@ -116,7 +117,7 @@ func ch1Final() seedChapter {
 				}},
 
 				{title: "ASR Feedback", typ: model.ModuleMonologue,
-					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next step. My score is: ___%.",
+					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next step.",
 					order:   11},
 
 				{title: "Congklak Games (Video)", typ: model.ModuleVideo,
@@ -126,7 +127,7 @@ func ch1Final() seedChapter {
 				{title: "Grammar Focus", typ: model.ModuleMonologue, content: grammar, order: 3},
 
 				{title: "ASR Feedback", typ: model.ModuleMonologue,
-					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next step. My score is: ___%.",
+					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next step.",
 					order:   15},
 			}},
 			{title: "3. Comprehension Check", desc: "Comprehension Check — video, dialogues, quizzes and oral questions (brief #14-20).", modules: []seedModule{
@@ -179,7 +180,7 @@ func ch1Final() seedChapter {
 				}},
 
 				{title: "ASR Feedback", typ: model.ModuleMonologue,
-					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next step. My score is: ___%.",
+					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next step.",
 					order:   8},
 			}},
 			{title: "4. Guided Speaking", desc: "Guided Speaking — Galah Panjang monologue, dialogue and vocabulary (brief #21-24).", modules: []seedModule{
@@ -188,37 +189,22 @@ func ch1Final() seedChapter {
 					quizTask(model.TaskOpenEnded, "Complete with words from the text: Galah Panjang is a traditional (1)____ game. Players are divided into (2)____ teams. One team tries to (3)____ the lines. The game needs teamwork and (4)____. It can be played by (5)____ or children.",
 						"", `{"blanks":["team","two","cross","strategy","adults"]}`),
 				}},
-				{title: "Tengku and Siti", typ: model.ModuleDialogue, content: "Practice the dialogue with your partner, then record your voice.", transcript: tengku, order: 2, tasks: []seedTask{
-					speakTask("Choose a role and read your lines aloud.", ""),
-				}},
+				{title: "Tengku and Siti", typ: model.ModuleDialogue, content: "Practice the dialogue with your partner. Choose a role and read your lines aloud.", transcript: tengku, order: 2},
 				{title: "Galah Panjang Vocabulary", typ: model.ModuleMonologue, content: "Please listen to the pronunciation model and repeat.", transcript: galahVocab, order: 3},
 
 				{title: "ASR Feedback", typ: model.ModuleMonologue,
-					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next step. My score is: ___%.",
+					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next step.",
 					order:   4},
 			}},
 			{title: "5. Independent Speaking", desc: "Independent Speaking — present a traditional game without reading the script (brief #25-26).", modules: []seedModule{
-				{title: "My Presentation", typ: model.ModuleOralTest, content: "Develop a monologue about Riau Malay Traditional Games. Speak for 3 to 5 minutes without reading the script. Describe the physical appearance, preparation, and the benefits. Choose one game: Bakiak, Gasing, Layang-layang, Pacu kolek, Lulu Cina Buta, Selambut, Benteng, Engrang. Record the monologue by clicking the record button.", transcript: pacu, order: 1, tasks: []seedTask{
-					speakTask("Present your monologue for 3 to 5 minutes without reading, then record.", ""),
+				{title: "Instruction", typ: model.ModuleOralTest, content: "Develop a monologue about Riau Malay Traditional Games. Speak for 3 to 5 minutes without reading the script. Describe the physical appearance, preparation, and the benefits. Choose one game from Riau Traditional Games below. Use the language functions in the next module. Record your monologue by clicking the record button.\n\nRiau Traditional Games:\nBakiak\nGasing\nLayang-layang\nPacu kolek\nLulu Cina Buta\nSelambut\nBenteng\nEngrang", order: 1, tasks: []seedTask{
+					speakTask("Record your 3 to 5 minute monologue about the game you chose.", ""),
 				}},
-				{title: "Language Functions Reference", typ: model.ModuleMonologue, content: "Describing: Jong Layo is a unique traditional game from Riau. Asking: How do you play it? Giving information: Two players can play the game. Opinions: I think it is exciting. Reasons: I like Galah Panjang because it is exciting and I can play it with friends. Inviting: Let's play Galah Panjang!", order: 2},
+				{title: "Language Functions Reference", typ: model.ModuleOralTest, content: "Study each language function and its example below. Practice saying your own sentence for each function.", transcript: funcTable, order: 2},
 
 				{title: "ASR Feedback", typ: model.ModuleMonologue,
-					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to Self-Reflection. My score is: ___%.",
+					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next steps.",
 					order:   3},
-			}},
-			{title: "6. Self-Reflection", desc: "Self-Reflection — evaluate speaking, identify difficulty, plan improvement (brief #27-28).", modules: []seedModule{
-				{title: "My Reflection", typ: model.ModuleMonologue,
-					content: "Did I speak fluently? Did I pronounce the words correctly? Did I use appropriate vocabulary? What was my biggest difficulty? What should I improve?",
-					order:   1},
-				{title: "Overall ASR Feedback", typ: model.ModuleMonologue,
-					content: "Check the overall ASR feedback for this chapter. When you reach 80% correct, continue to Re-practice and Mastery. My score is: ___%.",
-					order:   2},
-			}},
-			{title: "7. Re-practice and Mastery", desc: "Re-practice low scores, enrichment for high scores, then next lesson (brief #29).", modules: []seedModule{
-				{title: "Practice and Mastery", typ: model.ModuleMonologue,
-					content: "Speaking 1 > ASR Feedback > Self-Reflection > Re-practice (low scores). Speaking 2 > ASR Feedback > Self-Reflection > Enrichment (high scores). If the goal is reached: next lesson.",
-					order:   1},
 			}},
 		},
 	}

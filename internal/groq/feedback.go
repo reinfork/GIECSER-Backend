@@ -44,6 +44,7 @@ type AssessmentRequest struct {
 	Reference       string
 	WPM             float64
 	Accuracy        float64
+	Independent     bool
 	TargetPhonetics string
 	CulturalTopic   string
 }
@@ -66,6 +67,18 @@ Target phonetics lexicon: %s
 Cultural topic: %s
 Reply with JSON only, exactly these keys: overall_score (0-100 float), phonetic_feedback (array of {word,target,actual,tip}), grammar_corrections (array of {original,corrected,explanation}), cultural_context_notes (string), actionable_tips (array of max 3 short strings).`,
 		req.Reference, req.Transcript, req.WPM, req.Accuracy, req.TargetPhonetics, req.CulturalTopic)
+	if req.Independent {
+		// No reference sentence: free speech has nothing to align against.
+		// Judge grammar, coherence and topic fit directly into overall_score.
+		prompt = fmt.Sprintf(`You assess free English speaking practice for Indonesian students learning Riau Malay culture in English.
+Speaking task: %q
+Student said: %q
+Measured: WPM %.1f (ideal 110-150).
+Target phonetics lexicon: %s
+Cultural topic: %s
+Reply with JSON only, exactly these keys: overall_score (0-100 float judging grammar, coherence and topic fit), phonetic_feedback (array of {word,target,actual,tip}), grammar_corrections (array of {original,corrected,explanation}), cultural_context_notes (string), actionable_tips (array of max 3 short strings).`,
+			req.Reference, req.Transcript, req.WPM, req.TargetPhonetics, req.CulturalTopic)
+	}
 
 	payload, _ := json.Marshal(map[string]any{
 		"model": feedbackModel,

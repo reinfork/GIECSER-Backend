@@ -120,8 +120,10 @@ func (s *SubmissionService) SubmitAudio(ctx context.Context, taskID string, audi
 	}
 
 	transcript := ""
+	independent := false
 	if module, err := s.modules.FindByID(task.ModuleID); err == nil {
 		transcript = module.TargetTranscript
+		independent = module.Type == model.ModuleOralTest
 	}
 	reference := referenceFor(task.Prompt, task.OptionsJSON, transcript)
 	wer, _, _, _, _ := scoring.WER(reference, tr.Text)
@@ -132,16 +134,24 @@ func (s *SubmissionService) SubmitAudio(ctx context.Context, taskID string, audi
 
 	fb, err := s.feedback.Assess(ctx, groq.AssessmentRequest{
 		Transcript: tr.Text, Reference: reference, WPM: wpm, Accuracy: accuracy,
+		Independent:     independent,
 		TargetPhonetics: task.TargetPhonetics, CulturalTopic: culturalTopic,
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	// Independent speech has no reference to align against: the AI verdict
+	// is the accuracy. Applies corpus-wide to every ORAL_TEST module.
+	mispronounced := scoring.Align(reference, tr.Text)
+	if independent {
+		accuracy, mispronounced = fb.OverallScore, nil
+	}
+
 	result := &SubmissionResult{
 		TranscribedText: tr.Text, WordAccuracyScore: accuracy, FluencyScore: fluency,
 		PronunciationScore: fb.OverallScore, WPM: wpm, Feedback: fb,
-		Mispronounced: scoring.Align(reference, tr.Text),
+		Mispronounced: mispronounced,
 	}
 	_ = s.submissions.Create(&model.AudioSubmission{
 		TaskID: taskID, Source: "audio", AudioFileURL: nil, TranscribedText: tr.Text,
@@ -168,8 +178,10 @@ func (s *SubmissionService) SubmitText(ctx context.Context, taskID, transcribed 
 		return nil, ErrUnsupported
 	}
 	reference := ""
+	independent := false
 	if module, err := s.modules.FindByID(task.ModuleID); err == nil {
 		reference = module.TargetTranscript
+		independent = module.Type == model.ModuleOralTest
 	}
 	reference = referenceFor(task.Prompt, task.OptionsJSON, reference)
 	wer, _, _, _, _ := scoring.WER(reference, transcribed)
@@ -177,6 +189,10 @@ func (s *SubmissionService) SubmitText(ctx context.Context, taskID, transcribed 
 	wpm := scoring.WPM(len(scoring.Words(transcribed)), durationSec)
 	fluency := boost(scoring.FluencyScore(wpm), textDelta())
 	words := scoring.Align(reference, transcribed)
+	if independent {
+		// No AI on this path by design: fluency stands in for accuracy.
+		accuracy, words = fluency, nil
+	}
 
 	result := &SubmissionResult{
 		TranscribedText: transcribed, WordAccuracyScore: accuracy, FluencyScore: fluency,
