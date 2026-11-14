@@ -197,14 +197,23 @@ func ch1Final() seedChapter {
 					order:   4},
 			}},
 			{title: "5. Independent Speaking", desc: "Independent Speaking — present a traditional game without reading the script (brief #25-26).", modules: []seedModule{
-				{title: "Instruction", typ: model.ModuleOralTest, content: "Develop a monologue about Riau Malay Traditional Games. Speak for 3 to 5 minutes without reading the script. Describe the physical appearance, preparation, and the benefits. Choose one game from Riau Traditional Games below. Use the language functions in the next module. Record your monologue by clicking the record button.\n\nRiau Traditional Games:\nBakiak\nGasing\nLayang-layang\nPacu kolek\nLulu Cina Buta\nSelambut\nBenteng\nEngrang", order: 1, tasks: []seedTask{
-					speakTask("Record your 3 to 5 minute monologue about the game you chose.", ""),
-				}},
+				{title: "Instruction", typ: model.ModuleMonologue, content: "Develop a monologue about Riau Malay Traditional Games. Speak for 3 to 5 minutes without reading the script. Describe the physical appearance, preparation, and the benefits. Choose one game from Riau Traditional Games below. Use the language functions in the next module. Record your monologue by clicking the record button.\n\nRiau Traditional Games:\nBakiak\nGasing\nLayang-layang\nPacu kolek\nLulu Cina Buta\nSelambut\nBenteng\nEngrang", order: 1},
 				{title: "Language Functions Reference", typ: model.ModuleOralTest, content: "Study each language function and its example below. Practice saying your own sentence for each function.", transcript: funcTable, order: 2},
 
+				{title: "Create My Monologue", typ: model.ModuleMonologue,
+					content: "Develop a monologue about Riau Malay Traditional Games. Speak for 3 to 5 minutes without reading the script. Describe the physical appearance, preparation, and the benefits. Choose one game from Riau Traditional Games below. Use the language functions in the previous module. Type your draft below. Your draft is your speaking reference — it is not scored.\n\nRiau Traditional Games:\nBakiak\nGasing\nLayang-layang\nPacu kolek\nLulu Cina Buta\nSelambut\nBenteng\nEngrang",
+					order:   3, tasks: []seedTask{
+						quizTask(model.TaskOpenEnded, "Type your monologue draft below.", `{"draft":true,"maxlength":2000}`, ``),
+					}},
+				{title: "Record My Monologue", typ: model.ModuleOralTest,
+					content:    "Develop a monologue about Riau Malay Traditional Games. Speak for 3 to 5 minutes without reading the script. Describe the physical appearance, preparation, and the benefits. Read your draft aloud from Your monologue below, then record.",
+					transcript: "Pacu Kolek is made from a coconut tree. Pacu Kolek is played in a team that consists of 4 to 10 players.",
+					order:      4, tasks: []seedTask{
+						speakTask("Read your draft aloud, then record your monologue.", ""),
+					}},
 				{title: "ASR Feedback", typ: model.ModuleMonologue,
 					content: "Check the ASR feedback to know your speaking level. When you reach 80% correct, please continue to the next steps.",
-					order:   3},
+					order:   5},
 			}},
 		},
 	}

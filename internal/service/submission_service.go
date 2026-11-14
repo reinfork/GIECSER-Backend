@@ -368,8 +368,8 @@ type ChapterAttempt struct {
 // ChapterFeedback rolls client-collected attempts into one Groq verdict.
 // Stateless: stores nothing, validates task→chapter linkage, one LLM call.
 func (s *SubmissionService) ChapterFeedback(ctx context.Context, chapterID string, attempts []ChapterAttempt) (*groq.ChapterVerdict, error) {
-	if len(attempts) == 0 || len(attempts) > 20 {
-		return nil, ErrValidation
+	if len(attempts) == 0 || len(attempts) > 50 {
+		return nil, ErrValidation // 50 covers a full-chapter gate scope; the 10/hour route limit caps abuse
 	}
 	chapter, err := s.chapters.FindByID(chapterID)
 	if err != nil {

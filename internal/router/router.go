@@ -77,12 +77,15 @@ func registerRoutes(r *gin.Engine, db *gorm.DB, cfg Config) {
 	rl := func(limit int, window time.Duration) gin.HandlerFunc {
 		return middleware.RateLimit(redisStore, limit, window)
 	}
+	rlStrict := func(limit int, window time.Duration) gin.HandlerFunc {
+		return middleware.RateLimitStrict(redisStore, limit, window)
+	}
 	auth := middleware.AuthMiddleware()
 	teacher := middleware.RequireKind(middleware.KindTeacher)
 
 	registerHealthRoutes(r, healthHandler)
 	registerAuthRoutes(r, authHandler, rl)
-	registerAccessRoutes(r, accessHandler, auth, teacher, rl)
+	registerAccessRoutes(r, accessHandler, auth, teacher, rlStrict)
 	registerChapterRoutes(r, chapterHandler, taskHandler, auth, teacher, rl)
 	registerCourseRoutes(r, courseHandler, auth, teacher)
 	registerModuleRoutes(r, moduleHandler, auth, teacher)

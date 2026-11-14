@@ -54,7 +54,7 @@ func Load() *Config {
 		TeacherPassword: os.Getenv("TEACHER_PASSWORD"),
 	}
 	if cfg.JWTSecret == "" {
-		cfg.JWTSecret = "dev-secret-change-me"
+		log.Fatal("JWT_SECRET is required (refusing dev fallback)")
 	}
 	if cfg.GinMode == "" {
 		cfg.GinMode = "debug"
