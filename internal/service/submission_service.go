@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"asri-backend/internal/groq"
@@ -65,18 +64,18 @@ type SubmissionResult struct {
 	Feedback           *groq.Feedback `json:"feedback"`
 }
 
-// referenceFor picks what a speaking attempt is scored against. Question
-// prompts ("...?") use the seeded Model answer when present — scoring a
-// 2-sentence answer against a whole monologue transcript yields ~10% for a
-// perfect answer. Plain repeat prompts keep module transcript, else prompt.
+// referenceFor picks what a speaking attempt is scored against. A seeded
+// Model answer always wins when present — scoring a 2-sentence answer
+// against a whole monologue transcript yields ~10% for a perfect answer.
+// Plain repeat prompts keep module transcript, else prompt.
+// ponytail: key-driven, not prompt-sniffed — a `reference` task field ends
+// even this when seeds need one.
 func referenceFor(prompt, optionsJSON, moduleTranscript string) string {
-	if strings.HasSuffix(strings.TrimSpace(prompt), "?") {
-		var o struct {
-			ModelAnswer string `json:"Model answer"`
-		}
-		if json.Unmarshal([]byte(optionsJSON), &o) == nil && o.ModelAnswer != "" {
-			return o.ModelAnswer
-		}
+	var o struct {
+		ModelAnswer string `json:"Model answer"`
+	}
+	if json.Unmarshal([]byte(optionsJSON), &o) == nil && o.ModelAnswer != "" {
+		return o.ModelAnswer
 	}
 	if moduleTranscript != "" {
 		return moduleTranscript

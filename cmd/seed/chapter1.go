@@ -31,7 +31,7 @@ func ch1Final() seedChapter {
 
 	mcq := func(n int, stem, a, b, c, d, correct string) seedTask {
 		return quizTask(model.TaskMultipleChoice,
-			"Choose the correct answer (A, B, C, or D), then say the complete sentence aloud: "+stem,
+			stem,
 			`{"A":"`+a+`","B":"`+b+`","C":"`+c+`","D":"`+d+`"}`,
 			`{"correct":"`+correct+`"}`)
 	}
@@ -137,7 +137,8 @@ func ch1Final() seedChapter {
 					quizTask(model.TaskOpenEnded, "How is the procedure to play Jong Layo?", "", `{"answers":["Players release their mini boats into the water from a starting line, letting the wind drive them freely, and the boat that reaches the finish line first wins"]}`),
 				}},
 				{title: "Paiman and Juminah", typ: model.ModuleDialogue, content: "Listen to the dialogue and answer the questions.", transcript: paiman, order: 2, tasks: []seedTask{
-					speakTask("Choose a role and read your lines aloud.", ""),
+					seedTask{typ: model.TaskSpeakingRecording, prompt: "Record Paiman's lines for feedback.", options: `{"Model answer":"Hi! I'm learning about a traditional game from Riau called Jong Layo. Jong Layo is a traditional game that uses a small boat. First, we prepare and decorate a small boat. Then, we put the boat on the water. The boat can move with the wind or water. No, I think it is quite simple and fun. We can learn creativity and appreciate the traditional culture of Riau. Sure! It would be fun to try it together.","role":"Paiman"}`},
+					seedTask{typ: model.TaskSpeakingRecording, prompt: "Record Juminah's lines for feedback.", options: `{"Model answer":"Hi! What are you doing? Jong Layo? What is it? How do you play it? Does the boat move by itself? That sounds interesting. Is it difficult to play? What can we learn from this game? I think I want to try it!","role":"Juminah"}`},
 				}},
 				{title: "Jong Layo Vocabulary Quiz", typ: model.ModuleQuiz, content: "Choose the correct answer, then say the complete sentence aloud.", order: 3, tasks: []seedTask{
 					mcq(1, "Jong Layo is a traditional ________ from Riau.", "Game", "Food", "Song", "Car", "A"),
