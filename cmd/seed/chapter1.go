@@ -208,7 +208,7 @@ func ch1Final() seedChapter {
 					}},
 				{title: "Record My Monologue", typ: model.ModuleOralTest,
 					content:    "Develop a monologue about Riau Malay Traditional Games. Speak for 3 to 5 minutes without reading the script. Describe the physical appearance, preparation, and the benefits. Read your draft aloud from Your monologue below, then record.",
-					transcript: "Pacu Kolek is made from a coconut tree. Pacu Kolek is played in a team that consists of 4 to 10 players.",
+					transcript: ".",
 					order:      4, tasks: []seedTask{
 						speakTask("Read your draft aloud, then record your monologue.", ""),
 					}},
