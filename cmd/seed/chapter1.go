@@ -42,8 +42,8 @@ func ch1Final() seedChapter {
 		courses: []seedCourse{
 			{title: "1. Goal Setting", desc: "Goal Setting — kemampuan yang dicapai setelah mempelajari topik ini (brief #1).", modules: []seedModule{
 				{title: "What You Will Learn", typ: model.ModuleMonologue,
-					content:    "By the end of the lesson: I can explain Jong Layo in English for 5-7 minutes correctly and fluently; I can describe how to play Jong Layo in English for 5-7 minutes correctly and fluently. After learning this topic, you are able to:",
-					transcript: "After learning this topic, you are able to: name several Riau Malay traditional games; describe a traditional game using simple English; explain how to play a traditional game; ask and answer questions about traditional games; express likes and dislikes; give simple opinions about traditional games; invite friends to play a traditional game; demonstrate and present a traditional game in English.",
+					content:    "By the end of the lesson: I can explain Jong Layo in English for 5-7 minutes correctly and fluently; I can describe how to play Jong Layo in English for 5-7 minutes correctly and fluently.",
+					transcript: "By the end of the lesson: I can explain Jong Layo in English for 5-7 minutes correctly and fluently; I can describe how to play Jong Layo in English for 5-7 minutes correctly and fluently..",
 					order:      1, tasks: []seedTask{
 						quizTask(model.TaskOpenEnded, "After learning this topic, you are able to:",
 							`{"objectives":["Name several Riau Malay traditional games","Describe a traditional game using simple English","Explain how to play a traditional game","Ask and answer questions about traditional games","Express likes and dislikes","Give simple opinions about traditional games","Invite friends to play a traditional game","Demonstrate and present a traditional game in English"]}`,
